@@ -4,16 +4,18 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
-@ConfigGroup("example")
+@ConfigGroup("snake")
 public interface SnakeConfig extends Config
 {
+	String GROUP = "snakeConfig";
+
 	@ConfigItem(
-		keyName = "greeting",
-		name = "Welcome Greeting",
-		description = "The message to show to the user when they login"
+		keyName = "gameSize",
+		name = "Game size",
+		description = "The size of the snake game."
 	)
-	default String greeting()
+	default Integer gameSize()
 	{
-		return "Hello";
+		return 5;
 	}
 }
