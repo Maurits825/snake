@@ -4,6 +4,7 @@ import com.google.inject.Provides;
 
 import javax.inject.Inject;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
@@ -13,8 +14,11 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.events.OverlayMenuClicked;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.ui.overlay.OverlayMenuEntry;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -33,12 +37,20 @@ public class SnakePlugin extends Plugin {
     @Inject
     private ClientThread clientThread;
 
+    @Inject
+    private OverlayManager overlayManager;
+
+    @Inject
+    private SnakeOverlay overlay;
+
     enum State {
         INIT,
         PLAYING,
+        GAME_OVER,
         RESET,
     }
 
+    @Getter
     private State currentState;
 
     private WorldPoint playerWorldPosition;
@@ -47,22 +59,29 @@ public class SnakePlugin extends Plugin {
     private Queue<RuneLiteObject> snakeTrail = new ArrayDeque<>();
     private List<RuneLiteObject> walls = new ArrayList<>();
     private WorldPoint wallStartPoint;
+    private int gameSize;
 
     private RuneLiteObject foodObject;
 
     @Override
     protected void startUp() throws Exception {
+        overlayManager.add(overlay);
         currentState = State.INIT;
+        updateGameSize();
     }
 
     @Override
     protected void shutDown() throws Exception {
-        currentState = State.INIT;
+        overlayManager.remove(overlay);
         clientThread.invokeLater(() ->
         {
             resetGame();
             return true;
         });
+    }
+
+    public Integer getScore() {
+        return snakeTrail.size();
     }
 
     @Subscribe
@@ -72,27 +91,32 @@ public class SnakePlugin extends Plugin {
 
         switch (currentState) {
             case INIT:
-                clearSnakeTrail();
-                //start with trail size 2
-                snakeTrail.add(spawnNewSnakeTrailObject());
-                snakeTrail.add(spawnNewSnakeTrailObject());
-
-                drawWalls();
-
-                createFoodObj();
-                reSpawnFood();
-
-                currentState = State.PLAYING;
+                initializeGame();
                 break;
             case PLAYING:
                 GameLoop();
                 break;
+            case GAME_OVER:
+                break;
         }
+    }
+
+    private void initializeGame() {
+        //start with trail size 2
+        snakeTrail.add(spawnNewSnakeTrailObject());
+        snakeTrail.add(spawnNewSnakeTrailObject());
+
+        drawWalls();
+
+        createFoodObj();
+        reSpawnFood();
+
+        currentState = State.PLAYING;
     }
 
     private void GameLoop() {
         if (checkInvalidMovement()) {
-            //resetGame();
+            currentState = State.GAME_OVER;
         } else if (playerLocalPosition.equals(foodObject.getLocation())) {
             snakeTrail.add(spawnNewSnakeTrailObject());
             reSpawnFood();
@@ -116,9 +140,9 @@ public class SnakePlugin extends Plugin {
     private boolean checkInvalidMovement() {
         boolean inGameBoundary =
                 playerWorldPosition.getX() > wallStartPoint.getX() &&
-                        playerWorldPosition.getX() <= (wallStartPoint.getX() + config.gameSize()) &&
+                        playerWorldPosition.getX() <= (wallStartPoint.getX() + gameSize) &&
                         playerWorldPosition.getY() < wallStartPoint.getY() &&
-                        playerWorldPosition.getY() >= (wallStartPoint.getY() - config.gameSize());
+                        playerWorldPosition.getY() >= (wallStartPoint.getY() - gameSize);
 
         if (!inGameBoundary) {
             return true;
@@ -175,24 +199,24 @@ public class SnakePlugin extends Plugin {
     private void drawWalls() {
         clearWalls();
 
-        int offset = (int) Math.ceil(config.gameSize() / 2.0f);
+        int offset = (int) Math.ceil(gameSize / 2.0f);
         wallStartPoint = playerWorldPosition
                 .dx(-offset)
                 .dy(offset);
 
-        for (int x = 0; x < config.gameSize() + 2; x++) {
+        for (int x = 0; x < gameSize + 2; x++) {
             walls.add(spawnWallObject(wallStartPoint.dx(x)));
         }
 
-        for (int x = 0; x < config.gameSize() + 2; x++) {
+        for (int x = 0; x < gameSize + 2; x++) {
             walls.add(spawnWallObject(wallStartPoint.dx(x).dy(-offset * 2)));
         }
 
-        for (int y = 0; y < config.gameSize(); y++) {
+        for (int y = 0; y < gameSize; y++) {
             walls.add(spawnWallObject(wallStartPoint.dy(-y - 1)));
         }
 
-        for (int y = 0; y < config.gameSize(); y++) {
+        for (int y = 0; y < gameSize; y++) {
             walls.add(spawnWallObject(wallStartPoint.dy(-y - 1).dx(offset * 2)));
         }
     }
@@ -212,8 +236,8 @@ public class SnakePlugin extends Plugin {
     private WorldPoint getRandomPointInGrid() {
         WorldPoint randomPoint;
         do {
-            int x = ThreadLocalRandom.current().nextInt(0, config.gameSize());
-            int y = ThreadLocalRandom.current().nextInt(0, config.gameSize());
+            int x = ThreadLocalRandom.current().nextInt(0, gameSize);
+            int y = ThreadLocalRandom.current().nextInt(0, gameSize);
             randomPoint = wallStartPoint.dx(x + 1).dy(-(y + 1));
         } while (randomPoint.equals(playerWorldPosition));
 
@@ -221,9 +245,30 @@ public class SnakePlugin extends Plugin {
     }
 
     @Subscribe
-    public void onConfigChanged(ConfigChanged configChanged) {
-        if (configChanged.getGroup().equals(config.GROUP)) {
+    public void onOverlayMenuClicked(OverlayMenuClicked overlayMenuClicked)
+    {
+        OverlayMenuEntry overlayMenuEntry = overlayMenuClicked.getEntry();
+        if (overlayMenuEntry.getMenuAction() == MenuAction.RUNELITE_OVERLAY
+                && overlayMenuClicked.getEntry().getOption().equals("newGame")
+                && overlayMenuClicked.getOverlay() == overlay)
+        {
             resetGame();
+        }
+    }
+
+    private void updateGameSize() {
+        gameSize = 1 + 2 * config.gameSize();
+    }
+    
+    @Subscribe
+    public void onConfigChanged(ConfigChanged configChanged) {
+        if (configChanged.getGroup().equals("snakeConfig")) {
+            updateGameSize();
+            clientThread.invokeLater(() ->
+            {
+                resetGame();
+                return true;
+            });
         }
     }
 

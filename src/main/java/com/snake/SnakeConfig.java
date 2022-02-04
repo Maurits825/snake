@@ -1,21 +1,18 @@
 package com.snake;
 
-import net.runelite.client.config.Config;
-import net.runelite.client.config.ConfigGroup;
-import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.*;
 
-@ConfigGroup("snake")
+@ConfigGroup("snakeConfig")
 public interface SnakeConfig extends Config
 {
-	String GROUP = "snakeConfig";
-
 	@ConfigItem(
 		keyName = "gameSize",
 		name = "Game size",
 		description = "The size of the snake game."
 	)
-	default Integer gameSize()
+	@Range(min = 1)
+	default int gameSize()
 	{
-		return 5;
+		return 2;
 	}
 }
