@@ -45,18 +45,22 @@ public class SnakePlugin extends Plugin {
 
     enum State {
         INIT,
+        WAITING_TO_START,
         PLAYING,
         GAME_OVER,
-        RESET,
+        RUN_ON,
     }
 
     @Getter
     private State currentState;
 
     private WorldPoint playerWorldPosition;
+    private WorldPoint previousPlayerLocalPosition;
     private LocalPoint playerLocalPosition;
 
     private Queue<RuneLiteObject> snakeTrail = new ArrayDeque<>();
+    private int initialTrailSize = 2;
+
     private List<RuneLiteObject> walls = new ArrayList<>();
     private WorldPoint wallStartPoint;
     private int gameSize;
@@ -67,7 +71,6 @@ public class SnakePlugin extends Plugin {
     protected void startUp() throws Exception {
         overlayManager.add(overlay);
         currentState = State.INIT;
-        updateGameSize();
     }
 
     @Override
@@ -81,11 +84,12 @@ public class SnakePlugin extends Plugin {
     }
 
     public Integer getScore() {
-        return snakeTrail.size();
+        return snakeTrail.size() - initialTrailSize;
     }
 
     @Subscribe
     public void onGameTick(GameTick tick) {
+        previousPlayerLocalPosition = playerWorldPosition;
         playerWorldPosition = client.getLocalPlayer().getWorldLocation();
         playerLocalPosition = LocalPoint.fromWorld(client, playerWorldPosition);
 
@@ -93,29 +97,40 @@ public class SnakePlugin extends Plugin {
             case INIT:
                 initializeGame();
                 break;
+            case WAITING_TO_START:
+                if (!previousPlayerLocalPosition.equals(playerWorldPosition)) {
+                    gameLoop();
+                    currentState = State.PLAYING;
+                }
+                break;
             case PLAYING:
-                GameLoop();
+                gameLoop();
                 break;
             case GAME_OVER:
+            case RUN_ON:
                 break;
         }
     }
 
     private void initializeGame() {
-        //start with trail size 2
-        snakeTrail.add(spawnNewSnakeTrailObject());
-        snakeTrail.add(spawnNewSnakeTrailObject());
+        for (int i = 0; i < initialTrailSize; i++) {
+            snakeTrail.add(spawnNewSnakeTrailObject());
+        }
+
+        updateGameSize();
 
         drawWalls();
 
         createFoodObj();
         reSpawnFood();
 
-        currentState = State.PLAYING;
+        currentState = State.WAITING_TO_START;
     }
 
-    private void GameLoop() {
-        if (checkInvalidMovement()) {
+    private void gameLoop() {
+        if (checkPlayerRunning()) {
+            currentState = State.RUN_ON;
+        } else if (checkInvalidMovement()) {
             currentState = State.GAME_OVER;
         } else if (playerLocalPosition.equals(foodObject.getLocation())) {
             snakeTrail.add(spawnNewSnakeTrailObject());
@@ -244,22 +259,26 @@ public class SnakePlugin extends Plugin {
         return randomPoint;
     }
 
+    private boolean checkPlayerRunning() {
+        return previousPlayerLocalPosition != null && playerLocalPosition != null &&
+                previousPlayerLocalPosition.distanceTo(playerWorldPosition) > 1;
+    }
+
+    private void updateGameSize() {
+        gameSize = 1 + 2 * config.gameSize();
+    }
+
     @Subscribe
-    public void onOverlayMenuClicked(OverlayMenuClicked overlayMenuClicked)
-    {
+    public void onOverlayMenuClicked(OverlayMenuClicked overlayMenuClicked) {
         OverlayMenuEntry overlayMenuEntry = overlayMenuClicked.getEntry();
         if (overlayMenuEntry.getMenuAction() == MenuAction.RUNELITE_OVERLAY
-                && overlayMenuClicked.getEntry().getOption().equals("newGame")
+                && overlayMenuClicked.getEntry().getOption().equals("Start")
                 && overlayMenuClicked.getOverlay() == overlay)
         {
             resetGame();
         }
     }
 
-    private void updateGameSize() {
-        gameSize = 1 + 2 * config.gameSize();
-    }
-    
     @Subscribe
     public void onConfigChanged(ConfigChanged configChanged) {
         if (configChanged.getGroup().equals("snakeConfig")) {

@@ -26,7 +26,7 @@ class SnakeOverlay extends OverlayPanel {
         this.config = config;
 
         setPosition(OverlayPosition.TOP_LEFT);
-        getMenuEntries().add(new OverlayMenuEntry(RUNELITE_OVERLAY, "newGame", "New game"));
+        getMenuEntries().add(new OverlayMenuEntry(RUNELITE_OVERLAY, "Start", "new game"));
     }
 
     @Override
@@ -42,9 +42,18 @@ class SnakeOverlay extends OverlayPanel {
                 title = "Game Over";
                 color = Color.RED;
                 break;
+            case WAITING_TO_START:
+                title = "Move to start";
+                color = Color.YELLOW;
+                break;
+            case RUN_ON:
+                title = "Running is not allowed";
+                color = Color.RED;
+                break;
             default:
                 return super.render(graphics);
         }
+
         panelComponent.getChildren().add(TitleComponent.builder()
                 .text(title)
                 .color(color)
