@@ -55,7 +55,7 @@ public class SnakePlugin extends Plugin {
     private State currentState;
 
     private WorldPoint playerWorldPosition;
-    private WorldPoint previousPlayerLocalPosition;
+    private WorldPoint previousPlayerWorldPosition;
     private LocalPoint playerLocalPosition;
 
     private Queue<RuneLiteObject> snakeTrail = new ArrayDeque<>();
@@ -89,7 +89,7 @@ public class SnakePlugin extends Plugin {
 
     @Subscribe
     public void onGameTick(GameTick tick) {
-        previousPlayerLocalPosition = playerWorldPosition;
+        previousPlayerWorldPosition = playerWorldPosition;
         playerWorldPosition = client.getLocalPlayer().getWorldLocation();
         playerLocalPosition = LocalPoint.fromWorld(client, playerWorldPosition);
 
@@ -98,7 +98,9 @@ public class SnakePlugin extends Plugin {
                 initializeGame();
                 break;
             case WAITING_TO_START:
-                if (!previousPlayerLocalPosition.equals(playerWorldPosition)) {
+                if (checkPlayerRunning()) {
+                    currentState = State.RUN_ON;
+                } else if (!previousPlayerWorldPosition.equals(playerWorldPosition)) {
                     gameLoop();
                     currentState = State.PLAYING;
                 }
@@ -181,7 +183,7 @@ public class SnakePlugin extends Plugin {
 
     private RuneLiteObject spawnNewSnakeTrailObject() {
         RuneLiteObject obj = client.createRuneLiteObject();
-        Model trailModel = client.loadModel(35394); //todo make this a var?
+        Model trailModel = client.loadModel(29311); //todo make this a var?
         obj.setModel(trailModel);
 
         obj.setLocation(playerLocalPosition, client.getPlane());
@@ -260,8 +262,8 @@ public class SnakePlugin extends Plugin {
     }
 
     private boolean checkPlayerRunning() {
-        return previousPlayerLocalPosition != null && playerLocalPosition != null &&
-                previousPlayerLocalPosition.distanceTo(playerWorldPosition) > 1;
+        return previousPlayerWorldPosition != null && playerLocalPosition != null &&
+                previousPlayerWorldPosition.distanceTo(playerWorldPosition) > 1;
     }
 
     private void updateGameSize() {
