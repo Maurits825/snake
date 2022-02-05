@@ -20,7 +20,9 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
 
+import java.awt.Color;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
@@ -183,9 +185,13 @@ public class SnakePlugin extends Plugin {
 
     private RuneLiteObject spawnNewSnakeTrailObject() {
         RuneLiteObject obj = client.createRuneLiteObject();
-        Model trailModel = client.loadModel(29311); //todo make this a var?
-        obj.setModel(trailModel);
+        ModelData trailModel = client.loadModelData(29311).cloneColors();
+        trailModel.recolor(trailModel.getFaceColors()[0],
+                JagexColor.rgbToHSL(new Color(38, 212, 64).getRGB(), 0.6d));
+        trailModel.recolor(trailModel.getFaceColors()[1],
+                JagexColor.rgbToHSL(new Color(173, 214, 179).getRGB(), 1.0d));
 
+        obj.setModel(trailModel.light());
         obj.setLocation(playerLocalPosition, client.getPlane());
 
         obj.setActive(true);
