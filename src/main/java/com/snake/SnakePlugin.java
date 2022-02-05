@@ -135,6 +135,9 @@ public class SnakePlugin extends Plugin {
         if (checkPlayerRunning()) {
             currentState = State.RUN_ON;
         } else if (checkInvalidMovement()) {
+            Player localPlayer = client.getLocalPlayer();
+            localPlayer.setAnimation(2925);
+            localPlayer.setAnimationFrame(0);
             currentState = State.GAME_OVER;
         } else if (playerLocalPosition.equals(foodObject.getLocation())) {
             snakeTrail.add(spawnNewSnakeTrailObject());
