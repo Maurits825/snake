@@ -69,6 +69,10 @@ public class SnakePlugin extends Plugin {
 
     private RuneLiteObject foodObject;
 
+    private int wallModelId = 17822;
+    private int coinsModelId = 26003;
+    private int acidModelId = 29311;
+
     @Override
     protected void startUp() throws Exception {
         overlayManager.add(overlay);
@@ -138,6 +142,8 @@ public class SnakePlugin extends Plugin {
             Player localPlayer = client.getLocalPlayer();
             localPlayer.setAnimation(2925);
             localPlayer.setAnimationFrame(0);
+            localPlayer.setOverheadCycle(150);
+            localPlayer.setOverheadText("Game Over!");
             currentState = State.GAME_OVER;
         } else if (playerLocalPosition.equals(foodObject.getLocation())) {
             snakeTrail.add(spawnNewSnakeTrailObject());
@@ -188,11 +194,11 @@ public class SnakePlugin extends Plugin {
 
     private RuneLiteObject spawnNewSnakeTrailObject() {
         RuneLiteObject obj = client.createRuneLiteObject();
-        ModelData trailModel = client.loadModelData(29311).cloneColors();
+        ModelData trailModel = client.loadModelData(acidModelId).cloneColors();
         trailModel.recolor(trailModel.getFaceColors()[0],
                 JagexColor.rgbToHSL(new Color(38, 212, 64).getRGB(), 0.6d));
         trailModel.recolor(trailModel.getFaceColors()[1],
-                JagexColor.rgbToHSL(new Color(173, 214, 179).getRGB(), 1.0d));
+                JagexColor.rgbToHSL(new Color(173, 214, 179).getRGB(), 0.8d));
 
         obj.setModel(trailModel.light());
         obj.setLocation(playerLocalPosition, client.getPlane());
@@ -204,8 +210,7 @@ public class SnakePlugin extends Plugin {
     private void createFoodObj() {
         foodObject = client.createRuneLiteObject();
 
-        //todo make this id a var?
-        Model food = client.loadModel(26003);
+        Model food = client.loadModel(coinsModelId);
         foodObject.setModel(food);
     }
 
@@ -250,8 +255,7 @@ public class SnakePlugin extends Plugin {
     private RuneLiteObject spawnWallObject(WorldPoint point) {
         RuneLiteObject obj = client.createRuneLiteObject();
 
-        //todo make this id a var?
-        Model wall = client.loadModel(17822);
+        Model wall = client.loadModel(wallModelId);
         obj.setModel(wall);
         LocalPoint lp = LocalPoint.fromWorld(client, point);
         obj.setLocation(lp, client.getPlane());
