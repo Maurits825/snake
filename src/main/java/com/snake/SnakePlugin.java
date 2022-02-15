@@ -138,7 +138,7 @@ public class SnakePlugin extends Plugin {
         drawWalls();
 
         createFoodObj();
-        reSpawnFood();
+        respawnFood();
 
         currentState = State.WAITING_TO_START;
     }
@@ -155,7 +155,8 @@ public class SnakePlugin extends Plugin {
             currentState = State.GAME_OVER;
         } else if (playerLocalPosition.equals(foodObject.getLocation())) {
             snakeTrail.add(spawnNewSnakeTrailObject());
-            reSpawnFood();
+            foodObject.setActive(false);
+            respawnFood();
         } else {
             //remove last and add it to the front trail
             RuneLiteObject snakeTrailObj = snakeTrail.poll();
@@ -230,7 +231,7 @@ public class SnakePlugin extends Plugin {
         foodObject.setShouldLoop(true);
     }
 
-    private void reSpawnFood() {
+    private void respawnFood() {
         LocalPoint lp = LocalPoint.fromWorld(client, getRandomPointInGrid());
         foodObject.setLocation(lp, client.getPlane());
         foodObject.setActive(true);
