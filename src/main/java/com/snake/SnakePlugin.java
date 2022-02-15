@@ -6,7 +6,13 @@ import javax.inject.Inject;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.*;
+import net.runelite.api.Client;
+import net.runelite.api.JagexColor;
+import net.runelite.api.MenuAction;
+import net.runelite.api.Model;
+import net.runelite.api.ModelData;
+import net.runelite.api.Player;
+import net.runelite.api.RuneLiteObject;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameTick;
@@ -21,8 +27,10 @@ import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
 
 import java.awt.Color;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
