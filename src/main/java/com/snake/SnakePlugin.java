@@ -77,9 +77,9 @@ public class SnakePlugin extends Plugin {
 
     private RuneLiteObject foodObject;
 
-    private int wallModelId = 17822;
-    private int coinsModelId = 26003;
-    private int acidModelId = 29311;
+    private int wallModelId = 32693;
+    private int foodModelId = 2317;
+    private int trailModelId = 29311;
 
     @Override
     protected void startUp() throws Exception {
@@ -202,11 +202,11 @@ public class SnakePlugin extends Plugin {
 
     private RuneLiteObject spawnNewSnakeTrailObject() {
         RuneLiteObject obj = client.createRuneLiteObject();
-        ModelData trailModel = client.loadModelData(acidModelId).cloneColors();
+        ModelData trailModel = client.loadModelData(trailModelId).cloneColors();
         trailModel.recolor(trailModel.getFaceColors()[0],
-                JagexColor.rgbToHSL(new Color(38, 212, 64).getRGB(), 0.6d));
+                JagexColor.rgbToHSL(new Color(32, 139, 25).getRGB(), 1.0d));
         trailModel.recolor(trailModel.getFaceColors()[1],
-                JagexColor.rgbToHSL(new Color(173, 214, 179).getRGB(), 0.8d));
+                JagexColor.rgbToHSL(new Color(59, 148, 74).getRGB(), 1.0d));
 
         obj.setModel(trailModel.light());
         obj.setLocation(playerLocalPosition, client.getPlane());
@@ -218,8 +218,16 @@ public class SnakePlugin extends Plugin {
     private void createFoodObj() {
         foodObject = client.createRuneLiteObject();
 
-        Model food = client.loadModel(coinsModelId);
-        foodObject.setModel(food);
+        ModelData foodModel = client.loadModelData(foodModelId)
+                .cloneVertices()
+                .translate(0, 200, 0)
+                .cloneColors();
+        foodModel.recolor(foodModel.getFaceColors()[0],
+                JagexColor.rgbToHSL(new Color(186, 16, 225).getRGB(), 1.0d));
+        foodObject.setModel(foodModel.light());
+
+        foodObject.setAnimation(client.loadAnimation(502));
+        foodObject.setShouldLoop(true);
     }
 
     private void reSpawnFood() {
