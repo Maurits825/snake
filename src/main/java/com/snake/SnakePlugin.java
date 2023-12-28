@@ -169,7 +169,10 @@ public class SnakePlugin extends Plugin {
         clearSnakeTrail();
         clearWalls();
 
-        foodObject.setActive(false);
+        if (foodObject != null)
+        {
+            foodObject.setActive(false);
+        }
 
         currentState = State.INIT;
     }
