@@ -20,88 +20,90 @@ import java.awt.image.BufferedImage;
 
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
 
-class SnakeOverlay extends OverlayPanel {
+class SnakeOverlay extends OverlayPanel
+{
 
-    private Client client;
-    private SnakePlugin plugin;
-    private SnakeConfig config;
+	private final Client client;
+	private final SnakePlugin plugin;
+	private final SnakeController snakeController;
 
-    @Inject
-    SpriteManager spriteManager;
+	@Inject
+	SpriteManager spriteManager;
 
-    private boolean hitsplatTimerStarted;
-    private long hitsplatStart;
+	private long hitsplatStart;
 
-    @Inject
-    SnakeOverlay(SnakePlugin plugin, Client client, SnakeConfig config) {
-        super(plugin);
-        this.client = client;
-        this.plugin = plugin;
-        this.config = config;
+	@Inject
+	SnakeOverlay(SnakePlugin plugin, Client client, SnakeController snakeController)
+	{
+		super(plugin);
+		this.client = client;
+		this.plugin = plugin;
+		this.snakeController = snakeController;
 
-        setPosition(OverlayPosition.TOP_LEFT);
-        getMenuEntries().add(new OverlayMenuEntry(RUNELITE_OVERLAY, "Start", "new game"));
-    }
+		setPosition(OverlayPosition.TOP_LEFT);
+		getMenuEntries().add(new OverlayMenuEntry(RUNELITE_OVERLAY, "Start", "new game"));
+	}
 
-    @Override
-    public Dimension render(Graphics2D graphics) {
-        String title;
-        Color color;
-        switch (plugin.getCurrentState()) {
-            case INIT:
-                hitsplatStart = 0;
-            case PLAYING:
-                title = "Playing";
-                color = Color.GREEN;
-                break;
-            case GAME_OVER:
-                title = "Game Over";
-                color = Color.RED;
+	@Override
+	public Dimension render(Graphics2D graphics)
+	{
+		SnakeController.State currentState = snakeController.getCurrentState();
+		String status = getStatusText(currentState);
 
-                if (hitsplatStart == 0) {
-                    hitsplatStart = System.currentTimeMillis();
-                }
-                else {
-                    long timerDiff = System.currentTimeMillis() - hitsplatStart;
-                    if (timerDiff <= 1000) {
-                        renderHitsplat(graphics);
-                    }
-                }
-                break;
-            case WAITING_TO_START:
-                title = "Move to start";
-                color = Color.YELLOW;
-                break;
-            case RUN_ON:
-                title = "Running is not allowed";
-                color = Color.RED;
-                break;
-            default:
-                return super.render(graphics);
-        }
+		panelComponent.getChildren().add(TitleComponent.builder()
+			.text("Snake: " + status)
+			.color(Color.GREEN)
+			.build());
 
-        panelComponent.getChildren().add(TitleComponent.builder()
-                .text(title)
-                .color(color)
-                .build());
+		if (currentState == SnakeController.State.PLAYING || currentState == SnakeController.State.GAME_OVER)
+		{
+			panelComponent.getChildren().add(LineComponent.builder()
+				.left("Scores")
+				.build());
 
-        panelComponent.getChildren().add(LineComponent.builder()
-                .left("Score:")
-                .right(String.format("%d", plugin.getScore()))
-                .build());
+			for (SnakePlayer snakePlayer : snakeController.getSnakePlayers())
+			{
+				panelComponent.getChildren().add(LineComponent.builder()
+					.left(snakePlayer.getPlayerName())
+					.right(snakePlayer.isAlive() ? String.valueOf(snakePlayer.getScore()) : "Dead!")
+					.build());
+			}
+		}
+		else
+		{
+			panelComponent.getChildren().add(LineComponent.builder()
+				.left("shift right-click to start a new game")
+				.build());
+		}
 
-        return super.render(graphics);
-    }
+		return super.render(graphics);
+	}
 
-    private void renderHitsplat(Graphics2D graphics) {
-        BufferedImage image =  spriteManager.getSprite(SpriteID.HITSPLAT_GREEN_POISON, 0);
-        Point playerLocation = Perspective.getCanvasImageLocation(
-                client, client.getLocalPlayer().getLocalLocation(), image, 98);
+	private String getStatusText(SnakeController.State state)
+	{
+		switch (state)
+		{
+			case IDLE:
+				return "Idle";
+			case PLAYING:
+				return "Playing";
+			case GAME_OVER:
+				return "Game Over";
+			default:
+				return "-";
+		}
+	}
 
-        Point imageLocation = new Point(playerLocation.getX() - 5, playerLocation.getY() - 22);
-        OverlayUtil.renderImageLocation(graphics, imageLocation, image);
+	private void renderHitsplat(Graphics2D graphics)
+	{
+		BufferedImage image = spriteManager.getSprite(SpriteID.HITSPLAT_GREEN_POISON, 0);
+		Point playerLocation = Perspective.getCanvasImageLocation(
+			client, client.getLocalPlayer().getLocalLocation(), image, 98);
 
-        Point textLocation = new Point(playerLocation.getX() - 3, playerLocation.getY() - 3);
-        OverlayUtil.renderTextLocation(graphics, textLocation, "99", Color.WHITE);
-    }
+		Point imageLocation = new Point(playerLocation.getX() - 5, playerLocation.getY() - 22);
+		OverlayUtil.renderImageLocation(graphics, imageLocation, image);
+
+		Point textLocation = new Point(playerLocation.getX() - 3, playerLocation.getY() - 3);
+		OverlayUtil.renderTextLocation(graphics, textLocation, "99", Color.WHITE);
+	}
 }

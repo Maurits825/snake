@@ -32,302 +32,243 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ThreadLocalRandom;
+import net.runelite.client.util.Text;
 
 @Slf4j
 @PluginDescriptor(
-        name = "Snake"
+	name = "Snake"
 )
-public class SnakePlugin extends Plugin {
-    @Inject
-    private Client client;
+public class SnakePlugin extends Plugin
+{
+	@Inject
+	private Client client;
 
-    @Inject
-    private SnakeConfig config;
+	@Inject
+	private SnakeConfig config;
 
-    @Inject
-    private ClientThread clientThread;
+	@Inject
+	private ClientThread clientThread;
 
-    @Inject
-    private OverlayManager overlayManager;
+	@Inject
+	private OverlayManager overlayManager;
 
-    @Inject
-    private SnakeOverlay overlay;
+	@Inject
+	private SnakeOverlay overlay;
 
-    enum State {
-        INIT,
-        WAITING_TO_START,
-        PLAYING,
-        GAME_OVER,
-        RUN_ON,
-    }
+	@Inject
+	private SnakeController snakeController;
 
-    @Getter
-    private State currentState;
+	@Inject
+	private SnakeView snakeView;
 
-    private WorldPoint playerWorldPosition;
-    private WorldPoint previousPlayerWorldPosition;
-    private LocalPoint playerLocalPosition;
+	enum State
+	{
+		INIT,
+		WAITING_TO_START,
+		PLAYING,
+		GAME_OVER,
+		RUN_ON,
+	}
 
-    private Queue<RuneLiteObject> snakeTrail = new ArrayDeque<>();
-    private int initialTrailSize = 2;
+	@Getter
+	private State currentState;
 
-    private List<RuneLiteObject> walls = new ArrayList<>();
-    private WorldPoint wallStartPoint;
-    private int gameSize;
+	private WorldPoint playerWorldPosition;
+	private WorldPoint previousPlayerWorldPosition;
+	private LocalPoint playerLocalPosition;
 
-    private RuneLiteObject foodObject;
+	private Queue<RuneLiteObject> snakeTrail = new ArrayDeque<>();
+	private int initialTrailSize = 2;
 
-    private int wallModelId = 32693;
-    private int foodModelId = 2317;
-    private int trailModelId = 29311;
+	private WorldPoint wallStartPoint;
+	private int gameSize;
 
-    @Override
-    protected void startUp() throws Exception {
-        overlayManager.add(overlay);
-        currentState = State.INIT;
-    }
+	private RuneLiteObject foodObject;
 
-    @Override
-    protected void shutDown() throws Exception {
-        overlayManager.remove(overlay);
-        clientThread.invokeLater(() ->
-        {
-            resetGame();
-            return true;
-        });
-    }
+	private int foodModelId = 2317;
+	private int trailModelId = 29311;
 
-    public Integer getScore() {
-        return snakeTrail.size() - initialTrailSize;
-    }
+	@Override
+	protected void startUp() throws Exception
+	{
+		overlayManager.add(overlay);
+		currentState = State.INIT;
+	}
 
-    @Subscribe
-    public void onGameTick(GameTick tick) {
-        previousPlayerWorldPosition = playerWorldPosition;
-        playerWorldPosition = client.getLocalPlayer().getWorldLocation();
-        playerLocalPosition = LocalPoint.fromWorld(client, playerWorldPosition);
+	@Override
+	protected void shutDown() throws Exception
+	{
+		overlayManager.remove(overlay);
+		clientThread.invokeLater(() ->
+		{
+			resetGame();
+			return true;
+		});
+	}
 
-        switch (currentState) {
-            case INIT:
-                initializeGame();
-                break;
-            case WAITING_TO_START:
-                if (checkPlayerRunning()) {
-                    currentState = State.RUN_ON;
-                } else if (!previousPlayerWorldPosition.equals(playerWorldPosition)) {
-                    gameLoop();
-                    currentState = State.PLAYING;
-                }
-                break;
-            case PLAYING:
-                gameLoop();
-                break;
-            case GAME_OVER:
-            case RUN_ON:
-                break;
-        }
-    }
+	public Integer getScore()
+	{
+		return snakeTrail.size() - initialTrailSize;
+	}
 
-    private void initializeGame() {
-        for (int i = 0; i < initialTrailSize; i++) {
-            snakeTrail.add(spawnNewSnakeTrailObject());
-        }
+	@Subscribe
+	public void onGameTick(GameTick tick)
+	{
+		snakeController.tick();
+		snakeView.drawSnakeTrails(snakeController.getSnakePlayers());
+	}
 
-        updateGameSize();
+	private void oldOnGameTick()
+	{
+		previousPlayerWorldPosition = playerWorldPosition;
+		playerWorldPosition = client.getLocalPlayer().getWorldLocation();
+		playerLocalPosition = LocalPoint.fromWorld(client, playerWorldPosition);
 
-        drawWalls();
+		switch (currentState)
+		{
+			case INIT:
+				initializeGame();
+				break;
+			case WAITING_TO_START:
+				if (checkPlayerRunning())
+				{
+					currentState = State.RUN_ON;
+				}
+				else if (!previousPlayerWorldPosition.equals(playerWorldPosition))
+				{
+//					gameLoop();
+					currentState = State.PLAYING;
+				}
+				break;
+			case PLAYING:
+//				gameLoop();
+				break;
+			case GAME_OVER:
+			case RUN_ON:
+				break;
+		}
+	}
 
-        createFoodObj();
-        respawnFood();
+	private void initializeGame()
+	{
+		resetGame();
 
-        currentState = State.WAITING_TO_START;
-    }
+		WorldPoint playerWorldPosition = client.getLocalPlayer().getWorldLocation();
+		snakeController.initialize(playerWorldPosition, getGameSize(), Text.fromCSV(config.playerNames()));
+		snakeView.drawWalls(playerWorldPosition, getGameSize());
+	}
 
-    private void gameLoop() {
-        if (checkPlayerRunning()) {
-            currentState = State.RUN_ON;
-        } else if (checkInvalidMovement()) {
-            Player localPlayer = client.getLocalPlayer();
-            localPlayer.setAnimation(2925);
-            localPlayer.setAnimationFrame(0);
-            localPlayer.setOverheadCycle(150);
-            localPlayer.setOverheadText("Game Over!");
-            currentState = State.GAME_OVER;
-        } else if (playerLocalPosition.equals(foodObject.getLocation())) {
-            snakeTrail.add(spawnNewSnakeTrailObject());
-            foodObject.setActive(false);
-            respawnFood();
-        } else {
-            //remove last and add it to the front trail
-            RuneLiteObject snakeTrailObj = snakeTrail.poll();
-            snakeTrailObj.setLocation(playerLocalPosition, client.getPlane());
-            snakeTrail.add(snakeTrailObj);
-        }
-    }
+	private void resetGame()
+	{
+		snakeController.reset();
+		snakeView.clearAll();
+	}
 
-    private void resetGame() {
-        clearSnakeTrail();
-        clearWalls();
+//	private void gameLoop()
+//	{
+//		if (checkPlayerRunning())
+//		{
+//			currentState = State.RUN_ON;
+//		}
+//		else if (checkInvalidMovement())
+//		{
+//			Player localPlayer = client.getLocalPlayer();
+//			localPlayer.setAnimation(2925);
+//			localPlayer.setAnimationFrame(0);
+//			localPlayer.setOverheadCycle(150);
+//			localPlayer.setOverheadText("Game Over!");
+//			currentState = State.GAME_OVER;
+//		}
+//		else if (playerLocalPosition.equals(foodObject.getLocation()))
+//		{
+//			snakeTrail.add(spawnNewSnakeTrailObject());
+//			foodObject.setActive(false);
+//			respawnFood();
+//		}
+//		else
+//		{
+//			//remove last and add it to the front trail
+//			RuneLiteObject snakeTrailObj = snakeTrail.poll();
+//			snakeTrailObj.setLocation(playerLocalPosition, client.getPlane());
+//			snakeTrail.add(snakeTrailObj);
+//		}
+//	}
 
-        if (foodObject != null)
-        {
-            foodObject.setActive(false);
-        }
+	private void createFoodObj()
+	{
+		foodObject = client.createRuneLiteObject();
 
-        currentState = State.INIT;
-    }
+		ModelData foodModel = client.loadModelData(foodModelId)
+			.cloneVertices()
+			.translate(0, 200, 0)
+			.cloneColors();
+		foodModel.recolor(foodModel.getFaceColors()[0],
+			JagexColor.rgbToHSL(new Color(186, 16, 225).getRGB(), 1.0d));
+		foodObject.setModel(foodModel.light());
 
-    private boolean checkInvalidMovement() {
-        boolean inGameBoundary =
-                playerWorldPosition.getX() > wallStartPoint.getX() &&
-                        playerWorldPosition.getX() <= (wallStartPoint.getX() + gameSize) &&
-                        playerWorldPosition.getY() < wallStartPoint.getY() &&
-                        playerWorldPosition.getY() >= (wallStartPoint.getY() - gameSize);
+		foodObject.setAnimation(client.loadAnimation(502));
+		foodObject.setShouldLoop(true);
+	}
 
-        if (!inGameBoundary) {
-            return true;
-        }
+	private void respawnFood()
+	{
+		LocalPoint lp = LocalPoint.fromWorld(client, getRandomPointInGrid());
+		foodObject.setLocation(lp, client.getPlane());
+		foodObject.setActive(true);
+	}
 
-        for (RuneLiteObject trailObj : snakeTrail) {
-            if (playerLocalPosition.equals(trailObj.getLocation())) {
-                return true;
-            }
-        }
+	private WorldPoint getRandomPointInGrid()
+	{
+		WorldPoint randomPoint;
+		do
+		{
+			int x = ThreadLocalRandom.current().nextInt(0, gameSize);
+			int y = ThreadLocalRandom.current().nextInt(0, gameSize);
+			randomPoint = wallStartPoint.dx(x + 1).dy(-(y + 1));
+		} while (randomPoint.equals(playerWorldPosition));
 
-        return false;
-    }
+		return randomPoint;
+	}
 
-    private void clearSnakeTrail() {
-        for (RuneLiteObject obj : snakeTrail) {
-            obj.setActive(false);
-        }
-        snakeTrail.clear();
-    }
+	private boolean checkPlayerRunning()
+	{
+		return previousPlayerWorldPosition != null && playerLocalPosition != null &&
+			previousPlayerWorldPosition.distanceTo(playerWorldPosition) > 1;
+	}
 
-    private RuneLiteObject spawnNewSnakeTrailObject() {
-        RuneLiteObject obj = client.createRuneLiteObject();
-        ModelData trailModel = client.loadModelData(trailModelId).cloneColors();
-        trailModel.recolor(trailModel.getFaceColors()[0],
-                JagexColor.rgbToHSL(new Color(32, 139, 25).getRGB(), 1.0d));
-        trailModel.recolor(trailModel.getFaceColors()[1],
-                JagexColor.rgbToHSL(new Color(59, 148, 74).getRGB(), 1.0d));
+	private int getGameSize()
+	{
+		return 1 + 2 * config.gameSize();
+	}
 
-        obj.setModel(trailModel.light());
-        obj.setLocation(playerLocalPosition, client.getPlane());
+	@Subscribe
+	public void onOverlayMenuClicked(OverlayMenuClicked overlayMenuClicked)
+	{
+		OverlayMenuEntry overlayMenuEntry = overlayMenuClicked.getEntry();
+		if (overlayMenuEntry.getMenuAction() == MenuAction.RUNELITE_OVERLAY
+			&& overlayMenuClicked.getEntry().getOption().equals("Start")
+			&& overlayMenuClicked.getOverlay() == overlay)
+		{
+			initializeGame();
+		}
+	}
 
-        obj.setActive(true);
-        return obj;
-    }
+	@Subscribe
+	public void onConfigChanged(ConfigChanged configChanged)
+	{
+		if (configChanged.getGroup().equals("snakeConfig"))
+		{
+			clientThread.invokeLater(() ->
+			{
+				resetGame();
+				return true;
+			});
+		}
+	}
 
-    private void createFoodObj() {
-        foodObject = client.createRuneLiteObject();
-
-        ModelData foodModel = client.loadModelData(foodModelId)
-                .cloneVertices()
-                .translate(0, 200, 0)
-                .cloneColors();
-        foodModel.recolor(foodModel.getFaceColors()[0],
-                JagexColor.rgbToHSL(new Color(186, 16, 225).getRGB(), 1.0d));
-        foodObject.setModel(foodModel.light());
-
-        foodObject.setAnimation(client.loadAnimation(502));
-        foodObject.setShouldLoop(true);
-    }
-
-    private void respawnFood() {
-        LocalPoint lp = LocalPoint.fromWorld(client, getRandomPointInGrid());
-        foodObject.setLocation(lp, client.getPlane());
-        foodObject.setActive(true);
-    }
-
-    private void clearWalls() {
-        for (RuneLiteObject obj : walls) {
-            obj.setActive(false);
-        }
-        walls.clear();
-    }
-
-    private void drawWalls() {
-        clearWalls();
-
-        int offset = (int) Math.ceil(gameSize / 2.0f);
-        wallStartPoint = playerWorldPosition
-                .dx(-offset)
-                .dy(offset);
-
-        for (int x = 0; x < gameSize + 2; x++) {
-            walls.add(spawnWallObject(wallStartPoint.dx(x)));
-        }
-
-        for (int x = 0; x < gameSize + 2; x++) {
-            walls.add(spawnWallObject(wallStartPoint.dx(x).dy(-offset * 2)));
-        }
-
-        for (int y = 0; y < gameSize; y++) {
-            walls.add(spawnWallObject(wallStartPoint.dy(-y - 1)));
-        }
-
-        for (int y = 0; y < gameSize; y++) {
-            walls.add(spawnWallObject(wallStartPoint.dy(-y - 1).dx(offset * 2)));
-        }
-    }
-
-    private RuneLiteObject spawnWallObject(WorldPoint point) {
-        RuneLiteObject obj = client.createRuneLiteObject();
-
-        Model wall = client.loadModel(wallModelId);
-        obj.setModel(wall);
-        LocalPoint lp = LocalPoint.fromWorld(client, point);
-        obj.setLocation(lp, client.getPlane());
-        obj.setActive(true);
-        return obj;
-    }
-
-    private WorldPoint getRandomPointInGrid() {
-        WorldPoint randomPoint;
-        do {
-            int x = ThreadLocalRandom.current().nextInt(0, gameSize);
-            int y = ThreadLocalRandom.current().nextInt(0, gameSize);
-            randomPoint = wallStartPoint.dx(x + 1).dy(-(y + 1));
-        } while (randomPoint.equals(playerWorldPosition));
-
-        return randomPoint;
-    }
-
-    private boolean checkPlayerRunning() {
-        return previousPlayerWorldPosition != null && playerLocalPosition != null &&
-                previousPlayerWorldPosition.distanceTo(playerWorldPosition) > 1;
-    }
-
-    private void updateGameSize() {
-        gameSize = 1 + 2 * config.gameSize();
-    }
-
-    @Subscribe
-    public void onOverlayMenuClicked(OverlayMenuClicked overlayMenuClicked) {
-        OverlayMenuEntry overlayMenuEntry = overlayMenuClicked.getEntry();
-        if (overlayMenuEntry.getMenuAction() == MenuAction.RUNELITE_OVERLAY
-                && overlayMenuClicked.getEntry().getOption().equals("Start")
-                && overlayMenuClicked.getOverlay() == overlay)
-        {
-            resetGame();
-        }
-    }
-
-    @Subscribe
-    public void onConfigChanged(ConfigChanged configChanged) {
-        if (configChanged.getGroup().equals("snakeConfig")) {
-            updateGameSize();
-            clientThread.invokeLater(() ->
-            {
-                resetGame();
-                return true;
-            });
-        }
-    }
-
-    @Provides
-    SnakeConfig provideConfig(ConfigManager configManager) {
-        return configManager.getConfig(SnakeConfig.class);
-    }
+	@Provides
+	SnakeConfig provideConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(SnakeConfig.class);
+	}
 }

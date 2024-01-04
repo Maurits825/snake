@@ -15,4 +15,14 @@ public interface SnakeConfig extends Config
 	{
 		return 2;
 	}
+
+	@ConfigItem(
+		keyName = "playerNames",
+		name = "Player name",
+		description = "RSN of the players, as comma separated list."
+	)
+	default String playerNames()
+	{
+		return "";
+	}
 }
