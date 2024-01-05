@@ -6,9 +6,11 @@ import javax.inject.Inject;
 
 import javax.inject.Provider;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.MenuAction;
+import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.MenuOptionClicked;
@@ -61,7 +63,7 @@ public class SnakePlugin extends Plugin
 	private static final String ADD_PLAYER_MENU = "Add snake player";
 
 	@Override
-	protected void startUp() throws Exception
+	protected void startUp()
 	{
 		overlayManager.add(overlay);
 
@@ -72,7 +74,7 @@ public class SnakePlugin extends Plugin
 	}
 
 	@Override
-	protected void shutDown() throws Exception
+	protected void shutDown()
 	{
 		overlayManager.remove(overlay);
 		clientThread.invokeLater(() ->
@@ -111,6 +113,17 @@ public class SnakePlugin extends Plugin
 		if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
 		{
 			resetGame();
+		}
+	}
+
+	@Subscribe
+	public void onChatMessage(ChatMessage event)
+	{
+		if (event.getType() == ChatMessageType.PUBLICCHAT)
+		{
+			String playerName = event.getName();
+			String message = Text.sanitize(Text.removeTags(event.getMessage())).toLowerCase();
+			snakeController.handleChatMessage(playerName, message);
 		}
 	}
 

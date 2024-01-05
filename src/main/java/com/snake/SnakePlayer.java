@@ -18,23 +18,31 @@ public class SnakePlayer
 	@Setter
 	private boolean isAlive;
 	@Getter
+	@Setter
+	private boolean isReady;
+
+	@Getter
 	private final Player player;
 	@Getter
 	private final String playerName;
 	@Getter
 	private final Color color;
+	@Getter
+	private final boolean isActivePlayer;
 
 	@Getter
 	private Queue<WorldPoint> snakeTrail = new ArrayDeque<>();
 
-	public SnakePlayer(Player player, Color color)
+	public SnakePlayer(Player player, Color color, boolean isActivePlayer)
 	{
 		this.player = player;
 		this.color = color;
+		this.isActivePlayer = isActivePlayer;
 
 		previousLocation = player.getWorldLocation();
 		isAlive = true;
 		playerName = player.getName();
+		isReady = false;
 
 		for (int i = 0; i < INITIAL_TRAIL_SIZE; i++)
 		{

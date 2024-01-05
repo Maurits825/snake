@@ -2,6 +2,7 @@ package com.snake;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -11,13 +12,13 @@ import net.runelite.api.Client;
 import net.runelite.api.Player;
 import net.runelite.api.coords.WorldPoint;
 
-@Singleton
 @Slf4j
+@Singleton
 public class SnakeController
 {
-	private final Client client;
+	public static final String READY_MESSAGE = "r";
 
-	enum State
+	public enum State
 	{
 		IDLE,
 		WAITING_TO_START,
@@ -25,11 +26,18 @@ public class SnakeController
 		GAME_OVER,
 	}
 
+	private static final List<Color> PLAYER_COLORS = Arrays.asList(
+		Color.BLUE, Color.YELLOW, Color.MAGENTA, Color.CYAN, Color.RED
+	);
+
+	private final Client client;
+
 	@Getter
 	private State currentState = State.IDLE;
 
 	@Getter
 	private List<SnakePlayer> snakePlayers;
+	private int readyCount;
 
 	private WorldPoint wallStartPoint;
 	private int gameSize;
@@ -45,7 +53,7 @@ public class SnakeController
 		this.wallStartPoint = SnakeUtils.getWallStartPoint(client.getLocalPlayer().getWorldLocation(), gameSize);
 		this.gameSize = gameSize;
 
-		snakePlayers = new ArrayList<>();
+		reset();
 
 		List<Player> players = client.getPlayers();
 		String currentPlayer = client.getLocalPlayer().getName();
@@ -56,19 +64,21 @@ public class SnakeController
 			Player player = SnakeUtils.findPlayer(players, playerName);
 			if (player != null)
 			{
-				Color color = playerName.equals(currentPlayer) ? Color.GREEN : SnakeUtils.PLAYER_COLORS.get(colorIndex);
-				snakePlayers.add(new SnakePlayer(player, color));
+				boolean isActivePlayer = playerName.equals(currentPlayer);
+				Color color = isActivePlayer ? Color.GREEN : PLAYER_COLORS.get(colorIndex);
+				snakePlayers.add(new SnakePlayer(player, color, isActivePlayer));
 			}
 
-			colorIndex = (colorIndex + 1) % SnakeUtils.PLAYER_COLORS.size();
+			colorIndex = (colorIndex + 1) % PLAYER_COLORS.size();
 		}
 
-		this.currentState = State.PLAYING; //TODO figure out later how to sync start for everyone
+		this.currentState = State.WAITING_TO_START;
 	}
 
 	public void reset()
 	{
 		snakePlayers = new ArrayList<>();
+		readyCount = 0;
 		this.currentState = State.IDLE;
 	}
 
@@ -79,6 +89,11 @@ public class SnakeController
 			case IDLE:
 				break;
 			case WAITING_TO_START:
+				if (readyCount == snakePlayers.size())
+				{
+					//TODO maybe have a countdown state or something here
+					currentState = State.PLAYING;
+				}
 				break;
 			case PLAYING:
 				playing();
@@ -88,7 +103,22 @@ public class SnakeController
 		}
 	}
 
-	public void playing()
+	public void handleChatMessage(String playerName, String message)
+	{
+		if (currentState == State.WAITING_TO_START && message.equals(READY_MESSAGE))
+		{
+			for (SnakePlayer snakePlayer : snakePlayers)
+			{
+				if (snakePlayer.getPlayerName().equals(playerName))
+				{
+					snakePlayer.setReady(true);
+					readyCount++;
+				}
+			}
+		}
+	}
+
+	private void playing()
 	{
 		//first set alive status
 		for (SnakePlayer snakePlayer : snakePlayers)
@@ -109,7 +139,6 @@ public class SnakeController
 		}
 	}
 
-	//TODO this has to be on controller or model???
 	private boolean checkValidMovement(SnakePlayer snakePlayer)
 	{
 		Player player = snakePlayer.getPlayer();

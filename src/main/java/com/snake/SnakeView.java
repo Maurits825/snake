@@ -172,4 +172,5 @@ public class SnakeView
 
 		foodObject.setAnimation(client.loadAnimation(502));
 		foodObject.setShouldLoop(true);
-	}}
+	}
+}

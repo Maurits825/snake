@@ -1,5 +1,6 @@
 package com.snake;
 
+import static com.snake.SnakeController.READY_MESSAGE;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.Point;
@@ -24,7 +25,6 @@ class SnakeOverlay extends OverlayPanel
 {
 
 	private final Client client;
-	private final SnakePlugin plugin;
 	private final SnakeController snakeController;
 
 	@Inject
@@ -37,7 +37,6 @@ class SnakeOverlay extends OverlayPanel
 	{
 		super(plugin);
 		this.client = client;
-		this.plugin = plugin;
 		this.snakeController = snakeController;
 
 		setPosition(OverlayPosition.TOP_LEFT);
@@ -54,7 +53,9 @@ class SnakeOverlay extends OverlayPanel
 			.text("Snake: " + status)
 			.build());
 
-		if (currentState == SnakeController.State.PLAYING || currentState == SnakeController.State.GAME_OVER)
+		if (currentState == SnakeController.State.WAITING_TO_START ||
+			currentState == SnakeController.State.PLAYING ||
+			currentState == SnakeController.State.GAME_OVER)
 		{
 			panelComponent.getChildren().add(LineComponent.builder()
 				.left("Scores")
@@ -62,11 +63,29 @@ class SnakeOverlay extends OverlayPanel
 
 			for (SnakePlayer snakePlayer : snakeController.getSnakePlayers())
 			{
+				String rightText = String.valueOf(snakePlayer.getScore());
+				if (currentState == SnakeController.State.WAITING_TO_START)
+				{
+					rightText = snakePlayer.isReady() ? "R" : "-";
+				}
+				else if (!snakePlayer.isAlive())
+				{
+					rightText = "Dead!";
+				}
+
 				panelComponent.getChildren().add(LineComponent.builder()
 					.left(snakePlayer.getPlayerName())
 					.leftColor(snakePlayer.isAlive() ? snakePlayer.getColor() : Color.DARK_GRAY)
-					.right(snakePlayer.isAlive() ? String.valueOf(snakePlayer.getScore()) : "Dead!")
+					.right(rightText)
 					.build());
+
+				if (!snakePlayer.isReady() && snakePlayer.isActivePlayer())
+				{
+					panelComponent.getChildren().add(LineComponent.builder()
+						.left("Type " + READY_MESSAGE + " in chat to ready!")
+						.leftColor(Color.RED)
+						.build());
+				}
 			}
 		}
 		else
@@ -85,6 +104,8 @@ class SnakeOverlay extends OverlayPanel
 		{
 			case IDLE:
 				return "Idle";
+			case WAITING_TO_START:
+				return "Waiting";
 			case PLAYING:
 				return "Playing";
 			case GAME_OVER:

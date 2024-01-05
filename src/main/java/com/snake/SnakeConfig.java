@@ -35,7 +35,7 @@ public interface SnakeConfig extends Config
 		keyName = "addPlayerMenuEntry",
 		name = "Show add player menu",
 		description = "Show add player menu on players.",
-		position= 99
+		position = 99
 	)
 	default boolean addPlayerMenuEntry()
 	{
