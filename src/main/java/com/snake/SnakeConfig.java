@@ -22,26 +22,27 @@ public interface SnakeConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "enableMultiplayer",
+		name = "Enable multiplayer",
+		description = "Enable multiplayer mode.",
+		position = 97
+	)
+	default boolean enableMultiplayer()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "playerNames",
-		name = "Player name",
-		description = "RSN of the players, as comma separated list."
+		name = "Player names",
+		description = "RSN of the players, as comma separated list.",
+		position = 98
 	)
 	default String playerNames()
 	{
 		return "";
 	}
 
-
-	@ConfigItem(
-		keyName = "enableMultiplayer",
-		name = "",
-		description = "",
-		position = 98
-	)
-	default boolean enableMultiplayer() //TODO
-	{
-		return false;
-	}
 
 	@ConfigItem(
 		keyName = "addPlayerMenuEntry",

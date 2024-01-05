@@ -1,9 +1,10 @@
 package com.snake;
 
 import com.google.inject.Provides;
-
+import java.awt.Color;
+import java.util.Collections;
+import java.util.List;
 import javax.inject.Inject;
-
 import javax.inject.Provider;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
@@ -24,12 +25,13 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
-
+import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.Text;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Snake"
+	name = "Snake",
+	description = "Play snake in game!"
 )
 public class SnakePlugin extends Plugin
 {
@@ -60,7 +62,7 @@ public class SnakePlugin extends Plugin
 	@Inject
 	private SnakeView snakeView;
 
-	private static final String ADD_PLAYER_MENU = "Add snake player";
+	private static final String ADD_PLAYER_MENU = ColorUtil.wrapWithColorTag("Add snake player", Color.GREEN);
 
 	@Override
 	protected void startUp()
@@ -93,7 +95,7 @@ public class SnakePlugin extends Plugin
 	public void onGameTick(GameTick tick)
 	{
 		snakeController.tick();
-		snakeView.drawSnakeTrails(snakeController.getSnakePlayers());
+		snakeView.update(snakeController.getFoodLocation());
 	}
 
 	@Subscribe
@@ -131,35 +133,19 @@ public class SnakePlugin extends Plugin
 	{
 		resetGame();
 
-		snakeController.initialize(getGameSize(), Text.fromCSV(config.playerNames()));
-		snakeView.drawWalls(getGameSize());
+		List<String> playerNames = config.enableMultiplayer() ?
+			Text.fromCSV(config.playerNames()) : Collections.singletonList(client.getLocalPlayer().getName());
+		snakeController.initialize(getGameSize(), playerNames);
+		snakeView.initialize(snakeController.getSnakePlayers(), snakeController.getFoodLocation(), getGameSize());
 	}
 
 	private void resetGame()
 	{
 		snakeController.reset();
-		snakeView.clearAll();
+		snakeView.reset();
 	}
 
-//	private void respawnFood()
-//	{
-//		LocalPoint lp = LocalPoint.fromWorld(client, getRandomPointInGrid());
-//		foodObject.setLocation(lp, client.getPlane());
-//		foodObject.setActive(true);
-//	}
-//
-//	private WorldPoint getRandomPointInGrid()
-//	{
-//		WorldPoint randomPoint;
-//		do
-//		{
-//			int x = ThreadLocalRandom.current().nextInt(0, gameSize);
-//			int y = ThreadLocalRandom.current().nextInt(0, gameSize);
-//			randomPoint = wallStartPoint.dx(x + 1).dy(-(y + 1));
-//		} while (randomPoint.equals(playerWorldPosition));
-//
-//		return randomPoint;
-//	}
+
 //
 //	private boolean checkPlayerRunning()
 //	{

@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import net.runelite.api.Player;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.client.util.ColorUtil;
 
 public class SnakePlayer
 {
@@ -52,17 +53,33 @@ public class SnakePlayer
 		return Math.max(0, snakeTrail.size() - INITIAL_TRAIL_SIZE);
 	}
 
+	public void setOverHeadText(String text)
+	{
+		setOverHeadText(text, 50);
+	}
+
+	public void setOverHeadText(String text, int duration)
+	{
+		player.setOverheadCycle(duration);
+		player.setOverheadText(ColorUtil.wrapWithColorTag(text, color));
+	}
+
 	public void fillInitialSnakeTrail()
 	{
 		for (int i = 0; i < INITIAL_TRAIL_SIZE - 1; i++)
 		{
-			snakeTrail.add(previousLocation);
+			snakeTrail.add(player.getWorldLocation());
 		}
 	}
 
-	public void updateSnakeTrail()
+	public void growSnakeTrail()
 	{
-		WorldPoint point = snakeTrail.poll();
+		snakeTrail.add(player.getWorldLocation());
+	}
+
+	public void moveSnakeTrail()
+	{
+		snakeTrail.poll();
 		snakeTrail.add(player.getWorldLocation());
 	}
 }

@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.Getter;
@@ -39,6 +40,8 @@ public class SnakeController
 
 	@Getter
 	private List<SnakePlayer> snakePlayers;
+	@Getter
+	private WorldPoint foodLocation;
 
 	private WorldPoint wallStartPoint;
 	private int gameSize;
@@ -46,6 +49,8 @@ public class SnakeController
 	private int readyCount;
 	@Getter
 	private int readyTickCountdown;
+
+	private Random generator;
 
 	@Inject
 	public SnakeController(Client client)
@@ -77,7 +82,16 @@ public class SnakeController
 			colorIndex = (colorIndex + 1) % PLAYER_COLORS.size();
 		}
 
-		this.currentState = State.WAITING_TO_START;
+		if (snakePlayers.size() == 1)
+		{
+			snakePlayers.get(0).setReady(true);
+			readyTickCountdown = READY_COUNTDOWN_TICKS;
+			currentState = State.READY;
+		}
+		else
+		{
+			currentState = State.WAITING_TO_START;
+		}
 	}
 
 	public void reset()
@@ -85,6 +99,7 @@ public class SnakeController
 		snakePlayers = new ArrayList<>();
 		readyCount = 0;
 		readyTickCountdown = 0;
+		foodLocation = null;
 		this.currentState = State.IDLE;
 	}
 
@@ -95,28 +110,10 @@ public class SnakeController
 			case IDLE:
 				break;
 			case WAITING_TO_START:
-				updateAllSnakeTrails();
-
-				if (readyCount == snakePlayers.size())
-				{
-					readyTickCountdown = READY_COUNTDOWN_TICKS;
-					currentState = State.READY;
-				}
+				waiting();
 				break;
 			case READY:
-				updateAllSnakeTrails();
-
-				readyTickCountdown--;
-				setOverheadText(null, String.valueOf(readyTickCountdown));
-				if (readyTickCountdown == 0)
-				{
-					for (SnakePlayer snakePlayer : snakePlayers)
-					{
-						snakePlayer.fillInitialSnakeTrail();
-					}
-					setOverheadText(null, "Go!");
-					currentState = State.PLAYING;
-				}
+				ready();
 				break;
 			case PLAYING:
 				playing();
@@ -141,9 +138,39 @@ public class SnakeController
 		}
 	}
 
+	private void waiting()
+	{
+		updateAllSnakeTrails();
+
+		if (readyCount == snakePlayers.size())
+		{
+			readyTickCountdown = READY_COUNTDOWN_TICKS;
+			currentState = State.READY;
+		}
+	}
+
+	private void ready()
+	{
+		updateAllSnakeTrails();
+
+		readyTickCountdown--;
+		setAllOverheadText(String.valueOf(readyTickCountdown));
+		if (readyTickCountdown == 0)
+		{
+			for (SnakePlayer snakePlayer : snakePlayers)
+			{
+				snakePlayer.fillInitialSnakeTrail();
+			}
+			setAllOverheadText("Go!");
+
+			generator = new Random(System.currentTimeMillis());
+			respawnFood();
+			currentState = State.PLAYING;
+		}
+	}
+
 	private void playing()
 	{
-		//first set alive status
 		for (SnakePlayer snakePlayer : snakePlayers)
 		{
 			if (snakePlayer.isAlive())
@@ -152,9 +179,30 @@ public class SnakeController
 			}
 		}
 
-		//second update trail for alive players
+		updatePlayersOnFood();
 		updateAllSnakeTrails();
+	}
 
+	private void updatePlayersOnFood()
+	{
+		List<SnakePlayer> onFoodPlayers = new ArrayList<>();
+		for (SnakePlayer snakePlayer : snakePlayers)
+		{
+			if (snakePlayer.isAlive() && snakePlayer.getPlayer().getWorldLocation().equals(foodLocation))
+			{
+				onFoodPlayers.add(snakePlayer);
+			}
+		}
+
+		if (onFoodPlayers.size() >= 1)
+		{
+			int randomIndex = generator.nextInt(onFoodPlayers.size());
+			SnakePlayer snakePlayerGrow = onFoodPlayers.get(randomIndex);
+			snakePlayerGrow.growSnakeTrail();
+			snakePlayerGrow.setOverHeadText("+1");
+
+			respawnFood();
+		}
 	}
 
 	private void updateAllSnakeTrails()
@@ -163,7 +211,7 @@ public class SnakeController
 		{
 			if (snakePlayer.isAlive())
 			{
-				snakePlayer.updateSnakeTrail();
+				snakePlayer.moveSnakeTrail();
 			}
 		}
 	}
@@ -193,27 +241,29 @@ public class SnakeController
 		return true;
 	}
 
-	private void setOverheadText(SnakePlayer snakePlayer, String text)
+	private void setAllOverheadText(String text)
 	{
-		if (snakePlayer != null)
+		for (SnakePlayer snakePlayer : snakePlayers)
 		{
-
-			Player player = snakePlayer.getPlayer();
-			setOverHeadText(player, text);
-		}
-		else
-		{
-			for (SnakePlayer p : snakePlayers)
-			{
-				Player player = p.getPlayer();
-				setOverHeadText(player, text);
-			}
+			snakePlayer.setOverHeadText(text);
 		}
 	}
 
-	private void setOverHeadText(Player player, String text)
+	private void respawnFood()
 	{
-		player.setOverheadCycle(50);
-		player.setOverheadText(text);
+		foodLocation = getRandomPointInGrid();
+	}
+
+	private WorldPoint getRandomPointInGrid()
+	{
+		WorldPoint randomPoint;
+		do
+		{
+			int x = generator.nextInt(gameSize);
+			int y = generator.nextInt(gameSize);
+			randomPoint = wallStartPoint.dx(x + 1).dy(-(y + 1));
+		} while (randomPoint.equals(foodLocation));
+
+		return randomPoint;
 	}
 }

@@ -71,7 +71,7 @@ class SnakeOverlay extends OverlayPanel
 	private void buildScoreOverlay(SnakeController.State currentState)
 	{
 		panelComponent.getChildren().add(LineComponent.builder()
-			.left("Scores")
+			.left("Score")
 			.build());
 
 		for (SnakePlayer snakePlayer : snakeController.getSnakePlayers())

@@ -19,9 +19,12 @@ public class SnakeView
 {
 	private final Client client;
 
+	private List<SnakePlayer> snakePlayers;
+	private int gameSize;
+
 	private final Map<SnakePlayer, List<RuneLiteObject>> snakePlayerTrails = new HashMap<>();
 	private final List<RuneLiteObject> walls = new ArrayList<>();
-
+	private RuneLiteObject foodObject;
 
 	private final int trailModelId = 29311;
 	private final int wallModelId = 32693;
@@ -33,13 +36,35 @@ public class SnakeView
 		this.client = client;
 	}
 
-	public void clearAll()
+	public void initialize(List<SnakePlayer> snakePlayers, WorldPoint foodLocation, int gameSize)
+	{
+		this.snakePlayers = snakePlayers;
+		this.gameSize = gameSize;
+
+		drawWalls();
+		foodObject = spawnFoodObject();
+	}
+
+	public void update(WorldPoint foodLocation)
+	{
+		updateFoodObject(foodLocation);
+		updateSnakeTrails();
+	}
+
+	public void reset()
 	{
 		clearWalls();
 		clearSnakeTrails();
+
+		if (foodObject != null)
+		{
+			foodObject.setActive(false);
+		}
+
+		snakePlayers = null;
 	}
 
-	public void drawSnakeTrails(List<SnakePlayer> snakePlayers)
+	private void updateSnakeTrails()
 	{
 		if (snakePlayers == null)
 		{
@@ -59,7 +84,7 @@ public class SnakeView
 				Queue<WorldPoint> snakePointTrail = snakePlayer.getSnakeTrail();
 				for (int i = 0; i <= (snakePointTrail.size() - snakeObjectTrail.size()); i++)
 				{
-					snakeObjectTrail.add(spawnNewSnakeTrailObject(snakePlayer.getColor()));
+					snakeObjectTrail.add(spawnSnakeTrailObject(snakePlayer.getColor()));
 				}
 
 				int index = 0;
@@ -68,7 +93,10 @@ public class SnakeView
 					RuneLiteObject obj = snakeObjectTrail.get(index);
 					LocalPoint lp = LocalPoint.fromWorld(client, point);
 					obj.setLocation(lp, client.getPlane());
-					obj.setActive(true);
+					if (!obj.isActive())
+					{
+						obj.setActive(true);
+					}
 					index++;
 				}
 
@@ -84,7 +112,7 @@ public class SnakeView
 		}
 	}
 
-	public void drawWalls(int gameSize)
+	private void drawWalls()
 	{
 		clearWalls();
 
@@ -111,6 +139,20 @@ public class SnakeView
 		}
 	}
 
+	private void updateFoodObject(WorldPoint foodLocation)
+	{
+		if (foodLocation == null)
+		{
+			return;
+		}
+
+		if (!foodObject.isActive())
+		{
+			foodObject.setActive(true);
+		}
+		foodObject.setLocation(LocalPoint.fromWorld(client, foodLocation), client.getPlane());
+	}
+
 	private void clearWalls()
 	{
 		for (RuneLiteObject obj : walls)
@@ -131,7 +173,7 @@ public class SnakeView
 		snakePlayerTrails.clear();
 	}
 
-	private RuneLiteObject spawnNewSnakeTrailObject(Color color)
+	private RuneLiteObject spawnSnakeTrailObject(Color color)
 	{
 		RuneLiteObject obj = client.createRuneLiteObject();
 		ModelData trailModel = client.loadModelData(trailModelId).cloneColors();
@@ -158,9 +200,9 @@ public class SnakeView
 		return obj;
 	}
 
-	private void createFoodObj() //TODO
+	private RuneLiteObject spawnFoodObject()
 	{
-		RuneLiteObject foodObject = client.createRuneLiteObject();
+		RuneLiteObject obj = client.createRuneLiteObject();
 
 		ModelData foodModel = client.loadModelData(foodModelId)
 			.cloneVertices()
@@ -168,9 +210,13 @@ public class SnakeView
 			.cloneColors();
 		foodModel.recolor(foodModel.getFaceColors()[0],
 			JagexColor.rgbToHSL(new Color(186, 16, 225).getRGB(), 1.0d));
-		foodObject.setModel(foodModel.light());
+		obj.setModel(foodModel.light());
 
-		foodObject.setAnimation(client.loadAnimation(502));
-		foodObject.setShouldLoop(true);
+		obj.setAnimation(client.loadAnimation(502));
+		obj.setShouldLoop(true);
+
+		obj.setDrawFrontTilesFirst(true);//TODO TEST!!!
+
+		return obj;
 	}
 }
