@@ -25,6 +25,7 @@ public class SnakeView
 
 	private final int trailModelId = 29311;
 	private final int wallModelId = 32693;
+	private int foodModelId = 2317;
 
 	@Inject
 	public SnakeView(Client client)
@@ -156,4 +157,19 @@ public class SnakeView
 		obj.setActive(true);
 		return obj;
 	}
-}
+
+	private void createFoodObj() //TODO
+	{
+		RuneLiteObject foodObject = client.createRuneLiteObject();
+
+		ModelData foodModel = client.loadModelData(foodModelId)
+			.cloneVertices()
+			.translate(0, 200, 0)
+			.cloneColors();
+		foodModel.recolor(foodModel.getFaceColors()[0],
+			JagexColor.rgbToHSL(new Color(186, 16, 225).getRGB(), 1.0d));
+		foodObject.setModel(foodModel.light());
+
+		foodObject.setAnimation(client.loadAnimation(502));
+		foodObject.setShouldLoop(true);
+	}}
