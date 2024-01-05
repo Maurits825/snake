@@ -1,10 +1,15 @@
 package com.snake;
 
-import net.runelite.client.config.*;
+import net.runelite.client.config.Config;
+import net.runelite.client.config.ConfigGroup;
+import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.Range;
 
-@ConfigGroup("snakeConfig")
+@ConfigGroup(SnakeConfig.GROUP)
 public interface SnakeConfig extends Config
 {
+	String GROUP = "snakeConfig";
+
 	@ConfigItem(
 		keyName = "gameSize",
 		name = "Game size",
@@ -24,5 +29,16 @@ public interface SnakeConfig extends Config
 	default String playerNames()
 	{
 		return "";
+	}
+
+	@ConfigItem(
+		keyName = "addPlayerMenuEntry",
+		name = "Show add player menu",
+		description = "Show add player menu on players.",
+		position= 99
+	)
+	default boolean addPlayerMenuEntry()
+	{
+		return false;
 	}
 }

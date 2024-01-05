@@ -112,7 +112,13 @@ public class SnakeController
 	//TODO this has to be on controller or model???
 	private boolean checkValidMovement(SnakePlayer snakePlayer)
 	{
-		WorldPoint playerWorldPosition = snakePlayer.getPlayer().getWorldLocation();
+		Player player = snakePlayer.getPlayer();
+		if (player == null || player.getName() == null)
+		{
+			return false;
+		}
+
+		WorldPoint playerWorldPosition = player.getWorldLocation();
 		boolean inGameBoundary =
 			playerWorldPosition.getX() > wallStartPoint.getX() &&
 				playerWorldPosition.getX() <= (wallStartPoint.getX() + gameSize) &&

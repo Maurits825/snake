@@ -4,23 +4,26 @@ import com.google.inject.Provides;
 
 import javax.inject.Inject;
 
+import javax.inject.Provider;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.GameState;
 import net.runelite.api.JagexColor;
 import net.runelite.api.MenuAction;
-import net.runelite.api.Model;
 import net.runelite.api.ModelData;
-import net.runelite.api.Player;
 import net.runelite.api.RuneLiteObject;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.OverlayMenuClicked;
+import net.runelite.client.menus.MenuManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -28,8 +31,6 @@ import net.runelite.client.ui.overlay.OverlayMenuEntry;
 
 import java.awt.Color;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ThreadLocalRandom;
 import net.runelite.client.util.Text;
@@ -53,6 +54,12 @@ public class SnakePlugin extends Plugin
 	private OverlayManager overlayManager;
 
 	@Inject
+	private Provider<MenuManager> menuManager;
+
+	@Inject
+	private ConfigManager configManager;
+
+	@Inject
 	private SnakeOverlay overlay;
 
 	@Inject
@@ -60,6 +67,8 @@ public class SnakePlugin extends Plugin
 
 	@Inject
 	private SnakeView snakeView;
+
+	private static final String ADD_PLAYER_MENU = "Add snake player";
 
 	enum State
 	{
@@ -93,6 +102,11 @@ public class SnakePlugin extends Plugin
 	{
 		overlayManager.add(overlay);
 		currentState = State.INIT;
+
+		if (config.addPlayerMenuEntry() && client != null)
+		{
+			menuManager.get().addPlayerMenuItem(ADD_PLAYER_MENU);
+		}
 	}
 
 	@Override
@@ -104,11 +118,11 @@ public class SnakePlugin extends Plugin
 			resetGame();
 			return true;
 		});
-	}
 
-	public Integer getScore()
-	{
-		return snakeTrail.size() - initialTrailSize;
+		if (client != null)
+		{
+			menuManager.get().removePlayerMenuItem(ADD_PLAYER_MENU);
+		}
 	}
 
 	@Subscribe
@@ -116,6 +130,26 @@ public class SnakePlugin extends Plugin
 	{
 		snakeController.tick();
 		snakeView.drawSnakeTrails(snakeController.getSnakePlayers());
+	}
+
+	@Subscribe
+	public void onMenuOptionClicked(MenuOptionClicked event)
+	{
+		if (event.getMenuAction() == MenuAction.RUNELITE_PLAYER && event.getMenuOption().equals(ADD_PLAYER_MENU))
+		{
+			String playerName = event.getMenuEntry().getPlayer().getName();
+			String newPlayerNames = config.playerNames() + "," + playerName;
+			configManager.setConfiguration(SnakeConfig.GROUP, "playerNames", newPlayerNames);
+		}
+	}
+
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged gameStateChanged)
+	{
+		if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
+		{
+			resetGame();
+		}
 	}
 
 	private void oldOnGameTick()
@@ -262,6 +296,16 @@ public class SnakePlugin extends Plugin
 				resetGame();
 				return true;
 			});
+
+			if (client != null)
+			{
+				menuManager.get().removePlayerMenuItem(ADD_PLAYER_MENU);
+
+				if (config.addPlayerMenuEntry())
+				{
+					menuManager.get().addPlayerMenuItem(ADD_PLAYER_MENU);
+				}
+			}
 		}
 	}
 

@@ -40,7 +40,6 @@ public class SnakeView
 
 	public void drawSnakeTrails(List<SnakePlayer> snakePlayers)
 	{
-		//TODO check here or just not call it?
 		if (snakePlayers == null)
 		{
 			return;
