@@ -31,6 +31,18 @@ public interface SnakeConfig extends Config
 		return "";
 	}
 
+
+	@ConfigItem(
+		keyName = "enableMultiplayer",
+		name = "",
+		description = "",
+		position = 98
+	)
+	default boolean enableMultiplayer() //TODO
+	{
+		return false;
+	}
+
 	@ConfigItem(
 		keyName = "addPlayerMenuEntry",
 		name = "Show add player menu",

@@ -44,15 +44,20 @@ public class SnakePlayer
 		playerName = player.getName();
 		isReady = false;
 
-		for (int i = 0; i < INITIAL_TRAIL_SIZE; i++)
-		{
-			snakeTrail.add(previousLocation);
-		}
+		snakeTrail.add(previousLocation);
 	}
 
 	public int getScore()
 	{
-		return snakeTrail.size() - INITIAL_TRAIL_SIZE;
+		return Math.max(0, snakeTrail.size() - INITIAL_TRAIL_SIZE);
+	}
+
+	public void fillInitialSnakeTrail()
+	{
+		for (int i = 0; i < INITIAL_TRAIL_SIZE - 1; i++)
+		{
+			snakeTrail.add(previousLocation);
+		}
 	}
 
 	public void updateSnakeTrail()

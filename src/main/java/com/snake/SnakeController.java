@@ -22,6 +22,7 @@ public class SnakeController
 	{
 		IDLE,
 		WAITING_TO_START,
+		READY,
 		PLAYING,
 		GAME_OVER,
 	}
@@ -29,6 +30,7 @@ public class SnakeController
 	private static final List<Color> PLAYER_COLORS = Arrays.asList(
 		Color.BLUE, Color.YELLOW, Color.MAGENTA, Color.CYAN, Color.RED
 	);
+	private static final int READY_COUNTDOWN_TICKS = 5;
 
 	private final Client client;
 
@@ -37,10 +39,13 @@ public class SnakeController
 
 	@Getter
 	private List<SnakePlayer> snakePlayers;
-	private int readyCount;
 
 	private WorldPoint wallStartPoint;
 	private int gameSize;
+
+	private int readyCount;
+	@Getter
+	private int readyTickCountdown;
 
 	@Inject
 	public SnakeController(Client client)
@@ -79,6 +84,7 @@ public class SnakeController
 	{
 		snakePlayers = new ArrayList<>();
 		readyCount = 0;
+		readyTickCountdown = 0;
 		this.currentState = State.IDLE;
 	}
 
@@ -89,9 +95,26 @@ public class SnakeController
 			case IDLE:
 				break;
 			case WAITING_TO_START:
+				updateAllSnakeTrails();
+
 				if (readyCount == snakePlayers.size())
 				{
-					//TODO maybe have a countdown state or something here
+					readyTickCountdown = READY_COUNTDOWN_TICKS;
+					currentState = State.READY;
+				}
+				break;
+			case READY:
+				updateAllSnakeTrails();
+
+				readyTickCountdown--;
+				setOverheadText(null, String.valueOf(readyTickCountdown));
+				if (readyTickCountdown == 0)
+				{
+					for (SnakePlayer snakePlayer : snakePlayers)
+					{
+						snakePlayer.fillInitialSnakeTrail();
+					}
+					setOverheadText(null, "Go!");
 					currentState = State.PLAYING;
 				}
 				break;
@@ -130,6 +153,12 @@ public class SnakeController
 		}
 
 		//second update trail for alive players
+		updateAllSnakeTrails();
+
+	}
+
+	private void updateAllSnakeTrails()
+	{
 		for (SnakePlayer snakePlayer : snakePlayers)
 		{
 			if (snakePlayer.isAlive())
@@ -162,5 +191,29 @@ public class SnakeController
 		//TODO check trail collision
 
 		return true;
+	}
+
+	private void setOverheadText(SnakePlayer snakePlayer, String text)
+	{
+		if (snakePlayer != null)
+		{
+
+			Player player = snakePlayer.getPlayer();
+			setOverHeadText(player, text);
+		}
+		else
+		{
+			for (SnakePlayer p : snakePlayers)
+			{
+				Player player = p.getPlayer();
+				setOverHeadText(player, text);
+			}
+		}
+	}
+
+	private void setOverHeadText(Player player, String text)
+	{
+		player.setOverheadCycle(50);
+		player.setOverheadText(text);
 	}
 }

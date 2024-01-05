@@ -1,7 +1,13 @@
 package com.snake;
 
 import static com.snake.SnakeController.READY_MESSAGE;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import javax.inject.Inject;
 import net.runelite.api.Client;
+import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
 import net.runelite.api.Perspective;
 import net.runelite.api.Point;
 import net.runelite.api.SpriteID;
@@ -12,14 +18,6 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayUtil;
 import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
-
-import javax.inject.Inject;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-
-import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
 
 class SnakeOverlay extends OverlayPanel
 {
@@ -55,38 +53,10 @@ class SnakeOverlay extends OverlayPanel
 
 		if (currentState == SnakeController.State.WAITING_TO_START ||
 			currentState == SnakeController.State.PLAYING ||
-			currentState == SnakeController.State.GAME_OVER)
+			currentState == SnakeController.State.GAME_OVER ||
+			currentState == SnakeController.State.READY)
 		{
-			panelComponent.getChildren().add(LineComponent.builder()
-				.left("Scores")
-				.build());
-
-			for (SnakePlayer snakePlayer : snakeController.getSnakePlayers())
-			{
-				String rightText = String.valueOf(snakePlayer.getScore());
-				if (currentState == SnakeController.State.WAITING_TO_START)
-				{
-					rightText = snakePlayer.isReady() ? "R" : "-";
-				}
-				else if (!snakePlayer.isAlive())
-				{
-					rightText = "Dead!";
-				}
-
-				panelComponent.getChildren().add(LineComponent.builder()
-					.left(snakePlayer.getPlayerName())
-					.leftColor(snakePlayer.isAlive() ? snakePlayer.getColor() : Color.DARK_GRAY)
-					.right(rightText)
-					.build());
-
-				if (!snakePlayer.isReady() && snakePlayer.isActivePlayer())
-				{
-					panelComponent.getChildren().add(LineComponent.builder()
-						.left("Type " + READY_MESSAGE + " in chat to ready!")
-						.leftColor(Color.RED)
-						.build());
-				}
-			}
+			buildScoreOverlay(currentState);
 		}
 		else
 		{
@@ -98,6 +68,48 @@ class SnakeOverlay extends OverlayPanel
 		return super.render(graphics);
 	}
 
+	private void buildScoreOverlay(SnakeController.State currentState)
+	{
+		panelComponent.getChildren().add(LineComponent.builder()
+			.left("Scores")
+			.build());
+
+		for (SnakePlayer snakePlayer : snakeController.getSnakePlayers())
+		{
+			String rightText = String.valueOf(snakePlayer.getScore());
+			if (currentState == SnakeController.State.WAITING_TO_START)
+			{
+				rightText = snakePlayer.isReady() ? "R" : "-";
+			}
+			else if (!snakePlayer.isAlive())
+			{
+				rightText = "Dead!";
+			}
+
+			panelComponent.getChildren().add(LineComponent.builder()
+				.left(snakePlayer.getPlayerName())
+				.leftColor(snakePlayer.isAlive() ? snakePlayer.getColor() : Color.DARK_GRAY)
+				.right(rightText)
+				.build());
+
+			if (!snakePlayer.isReady() && snakePlayer.isActivePlayer())
+			{
+				panelComponent.getChildren().add(LineComponent.builder()
+					.left("Type " + READY_MESSAGE + " in chat to ready!")
+					.leftColor(Color.RED)
+					.build());
+			}
+		}
+
+		if (currentState == SnakeController.State.READY)
+		{
+			int tickCountDown = snakeController.getReadyTickCountdown();
+			panelComponent.getChildren().add(LineComponent.builder()
+				.left(tickCountDown == 0 ? "Go!" : "Starting in " + snakeController.getReadyTickCountdown())
+				.build());
+		}
+	}
+
 	private String getStatusText(SnakeController.State state)
 	{
 		switch (state)
@@ -106,6 +118,8 @@ class SnakeOverlay extends OverlayPanel
 				return "Idle";
 			case WAITING_TO_START:
 				return "Waiting";
+			case READY:
+				return "Get Ready!";
 			case PLAYING:
 				return "Playing";
 			case GAME_OVER:
