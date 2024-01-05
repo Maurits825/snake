@@ -52,7 +52,6 @@ class SnakeOverlay extends OverlayPanel
 
 		panelComponent.getChildren().add(TitleComponent.builder()
 			.text("Snake: " + status)
-			.color(Color.GREEN)
 			.build());
 
 		if (currentState == SnakeController.State.PLAYING || currentState == SnakeController.State.GAME_OVER)
@@ -65,6 +64,7 @@ class SnakeOverlay extends OverlayPanel
 			{
 				panelComponent.getChildren().add(LineComponent.builder()
 					.left(snakePlayer.getPlayerName())
+					.leftColor(snakePlayer.isAlive() ? snakePlayer.getColor() : Color.DARK_GRAY)
 					.right(snakePlayer.isAlive() ? String.valueOf(snakePlayer.getScore()) : "Dead!")
 					.build());
 			}

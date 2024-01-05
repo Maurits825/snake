@@ -1,5 +1,6 @@
 package com.snake;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import javax.inject.Inject;
@@ -8,7 +9,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
-import net.runelite.api.RuneLiteObject;
 import net.runelite.api.coords.WorldPoint;
 
 @Singleton
@@ -40,21 +40,27 @@ public class SnakeController
 		this.client = client;
 	}
 
-	public void initialize(WorldPoint playerWorldPosition, int gameSize, List<String> playerNames)
+	public void initialize(int gameSize, List<String> playerNames)
 	{
-		this.wallStartPoint = SnakeUtils.getWallStartPoint(playerWorldPosition, gameSize);
+		this.wallStartPoint = SnakeUtils.getWallStartPoint(client.getLocalPlayer().getWorldLocation(), gameSize);
 		this.gameSize = gameSize;
 
 		snakePlayers = new ArrayList<>();
 
 		List<Player> players = client.getPlayers();
+		String currentPlayer = client.getLocalPlayer().getName();
+
+		int colorIndex = 0;
 		for (String playerName : playerNames)
 		{
-			Player player = findPlayer(players, playerName);
+			Player player = SnakeUtils.findPlayer(players, playerName);
 			if (player != null)
 			{
-				snakePlayers.add(new SnakePlayer(player));
+				Color color = playerName.equals(currentPlayer) ? Color.GREEN : SnakeUtils.PLAYER_COLORS.get(colorIndex);
+				snakePlayers.add(new SnakePlayer(player, color));
 			}
+
+			colorIndex = (colorIndex + 1) % SnakeUtils.PLAYER_COLORS.size();
 		}
 
 		this.currentState = State.PLAYING; //TODO figure out later how to sync start for everyone
@@ -66,7 +72,6 @@ public class SnakeController
 		this.currentState = State.IDLE;
 	}
 
-	//TODO goal is two have acid trail behind two players, no movement check or anything atm
 	public void tick()
 	{
 		switch (currentState)
@@ -122,17 +127,5 @@ public class SnakeController
 		//TODO check trail collision
 
 		return true;
-	}
-
-	private Player findPlayer(List<Player> players, String name)
-	{
-		for (Player player : players)
-		{
-			if (player.getName().equals(name))
-			{
-				return player;
-			}
-		}
-		return null;
 	}
 }

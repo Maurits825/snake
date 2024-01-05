@@ -38,9 +38,6 @@ public class SnakeView
 		clearSnakeTrails();
 	}
 
-	//TODO what should be the input...
-	//but it means that we have to check if exsits in map, create object if not, create obj if not enough and so on
-	//is not alive check if exists, if so then setActive false and clear map
 	public void drawSnakeTrails(List<SnakePlayer> snakePlayers)
 	{
 		//TODO check here or just not call it?
@@ -62,7 +59,7 @@ public class SnakeView
 				Queue<WorldPoint> snakePointTrail = snakePlayer.getSnakeTrail();
 				for (int i = 0; i <= (snakePointTrail.size() - snakeObjectTrail.size()); i++)
 				{
-					snakeObjectTrail.add(spawnNewSnakeTrailObject());
+					snakeObjectTrail.add(spawnNewSnakeTrailObject(snakePlayer.getColor()));
 				}
 
 				int index = 0;
@@ -87,11 +84,11 @@ public class SnakeView
 		}
 	}
 
-	public void drawWalls(WorldPoint playerWorldPosition, int gameSize)
+	public void drawWalls(int gameSize)
 	{
 		clearWalls();
 
-		WorldPoint wallStartPoint = SnakeUtils.getWallStartPoint(playerWorldPosition, gameSize);
+		WorldPoint wallStartPoint = SnakeUtils.getWallStartPoint(client.getLocalPlayer().getWorldLocation(), gameSize);
 
 		for (int x = 0; x < gameSize + 2; x++)
 		{
@@ -134,15 +131,15 @@ public class SnakeView
 		snakePlayerTrails.clear();
 	}
 
-	private RuneLiteObject spawnNewSnakeTrailObject()
+	private RuneLiteObject spawnNewSnakeTrailObject(Color color)
 	{
 		RuneLiteObject obj = client.createRuneLiteObject();
 		ModelData trailModel = client.loadModelData(trailModelId).cloneColors();
-		//TODO color for each player?
+
 		trailModel.recolor(trailModel.getFaceColors()[0],
-			JagexColor.rgbToHSL(new Color(32, 139, 25).getRGB(), 1.0d));
+			JagexColor.rgbToHSL(color.getRGB(), 0.01d));
 		trailModel.recolor(trailModel.getFaceColors()[1],
-			JagexColor.rgbToHSL(new Color(59, 148, 74).getRGB(), 1.0d));
+			JagexColor.rgbToHSL(color.getRGB(), 1.0d));
 
 		obj.setModel(trailModel.light());
 

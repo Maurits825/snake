@@ -153,9 +153,8 @@ public class SnakePlugin extends Plugin
 	{
 		resetGame();
 
-		WorldPoint playerWorldPosition = client.getLocalPlayer().getWorldLocation();
-		snakeController.initialize(playerWorldPosition, getGameSize(), Text.fromCSV(config.playerNames()));
-		snakeView.drawWalls(playerWorldPosition, getGameSize());
+		snakeController.initialize(getGameSize(), Text.fromCSV(config.playerNames()));
+		snakeView.drawWalls(getGameSize());
 	}
 
 	private void resetGame()
