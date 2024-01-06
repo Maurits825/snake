@@ -111,8 +111,6 @@ public class SnakeController
 	{
 		switch (currentState)
 		{
-			case IDLE:
-				break;
 			case WAITING_TO_START:
 				waiting();
 				break;
@@ -122,6 +120,7 @@ public class SnakeController
 			case PLAYING:
 				playing();
 				break;
+			case IDLE:
 			case GAME_OVER:
 				break;
 		}

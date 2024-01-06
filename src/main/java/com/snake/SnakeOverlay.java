@@ -8,11 +8,12 @@ import java.awt.image.BufferedImage;
 import javax.inject.Inject;
 import net.runelite.api.Client;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
+import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
 import net.runelite.api.Perspective;
 import net.runelite.api.Point;
 import net.runelite.api.SpriteID;
 import net.runelite.client.game.SpriteManager;
-import net.runelite.client.ui.overlay.OverlayMenuEntry;
+import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayUtil;
@@ -38,7 +39,8 @@ class SnakeOverlay extends OverlayPanel
 		this.snakeController = snakeController;
 
 		setPosition(OverlayPosition.TOP_LEFT);
-		getMenuEntries().add(new OverlayMenuEntry(RUNELITE_OVERLAY, "Start", "new game"));
+		addMenuEntry(RUNELITE_OVERLAY, "Start", "new game");
+		addMenuEntry(RUNELITE_OVERLAY_CONFIG, OPTION_CONFIGURE, "Snake");
 	}
 
 	@Override
