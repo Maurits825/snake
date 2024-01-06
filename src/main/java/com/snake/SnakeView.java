@@ -21,13 +21,16 @@ public class SnakeView
 
 	private List<SnakePlayer> snakePlayers;
 	private int gameSize;
+	private SnakeGridTheme theme;
 
 	private final Map<SnakePlayer, List<RuneLiteObject>> snakePlayerTrails = new HashMap<>();
 	private final List<RuneLiteObject> walls = new ArrayList<>();
+	private final List<RuneLiteObject> tiles = new ArrayList<>();
 	private RuneLiteObject foodObject;
 
+	private WorldPoint wallStartPoint;
+
 	private final int trailModelId = 29311;
-	private final int wallModelId = 32693;
 	private int foodModelId = 2317;
 
 	@Inject
@@ -36,12 +39,23 @@ public class SnakeView
 		this.client = client;
 	}
 
-	public void initialize(List<SnakePlayer> snakePlayers, WorldPoint foodLocation, int gameSize)
+	public void initialize(List<SnakePlayer> snakePlayers, int gameSize, SnakeGridTheme theme)
 	{
 		this.snakePlayers = snakePlayers;
 		this.gameSize = gameSize;
+		this.theme = theme;
 
-		drawWalls();
+		wallStartPoint = SnakeUtils.getWallStartPoint(client.getLocalPlayer().getWorldLocation(), gameSize);
+
+		if (theme.getWallModelId() != -1)
+		{
+			spawnWalls();
+		}
+		if (theme.getTileModelId1() != -1 && theme.getTileModelId2() != -1)
+		{
+			spawnGridTiles();
+		}
+
 		foodObject = spawnFoodObject();
 	}
 
@@ -54,6 +68,7 @@ public class SnakeView
 	public void reset()
 	{
 		clearWalls();
+		clearGridTiles();
 		clearSnakeTrails();
 
 		if (foodObject != null)
@@ -112,12 +127,8 @@ public class SnakeView
 		}
 	}
 
-	private void drawWalls()
+	private void spawnWalls()
 	{
-		clearWalls();
-
-		WorldPoint wallStartPoint = SnakeUtils.getWallStartPoint(client.getLocalPlayer().getWorldLocation(), gameSize);
-
 		for (int x = 0; x < gameSize + 2; x++)
 		{
 			walls.add(spawnWallObject(wallStartPoint.dx(x)));
@@ -135,7 +146,27 @@ public class SnakeView
 
 		for (int y = 0; y < gameSize; y++)
 		{
-			walls.add(spawnWallObject(wallStartPoint.dy(-y - 1).dx(gameSize + 1)));
+			walls.add(spawnWallObject(wallStartPoint.dx(gameSize + 1).dy(-y - 1)));
+		}
+	}
+
+	private void spawnGridTiles()
+	{
+		int tileObjectId;
+		for (int x = 0; x < gameSize; x++)
+		{
+			for (int y = 0; y < gameSize; y++)
+			{
+				if ((x + y) % 2 == 0)
+				{
+					tileObjectId = theme.getTileModelId1();
+				}
+				else
+				{
+					tileObjectId = theme.getTileModelId2();
+				}
+				tiles.add(spawnGridTileObject(wallStartPoint.dx(x + 1).dy(-(y + 1)), tileObjectId));
+			}
 		}
 	}
 
@@ -160,6 +191,15 @@ public class SnakeView
 			obj.setActive(false);
 		}
 		walls.clear();
+	}
+
+	private void clearGridTiles()
+	{
+		for (RuneLiteObject obj : tiles)
+		{
+			obj.setActive(false);
+		}
+		tiles.clear();
 	}
 
 	private void clearSnakeTrails()
@@ -192,10 +232,23 @@ public class SnakeView
 	{
 		RuneLiteObject obj = client.createRuneLiteObject();
 
-		Model wall = client.loadModel(wallModelId);
+		Model wall = client.loadModel(theme.getWallModelId());
 		obj.setModel(wall);
 		LocalPoint lp = LocalPoint.fromWorld(client, point);
 		obj.setLocation(lp, client.getPlane());
+		obj.setActive(true);
+		return obj;
+	}
+
+	private RuneLiteObject spawnGridTileObject(WorldPoint point, int tileObjectId)
+	{
+		RuneLiteObject obj = client.createRuneLiteObject();
+
+		Model tile = client.loadModel(tileObjectId);
+		obj.setModel(tile);
+		LocalPoint lp = LocalPoint.fromWorld(client, point);
+		obj.setLocation(lp, client.getPlane());
+		
 		obj.setActive(true);
 		return obj;
 	}
@@ -215,7 +268,7 @@ public class SnakeView
 		obj.setAnimation(client.loadAnimation(502));
 		obj.setShouldLoop(true);
 
-		obj.setDrawFrontTilesFirst(true);//TODO TEST!!!
+		obj.setDrawFrontTilesFirst(true);
 
 		return obj;
 	}

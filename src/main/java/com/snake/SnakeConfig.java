@@ -21,6 +21,17 @@ public interface SnakeConfig extends Config
 		return 2;
 	}
 
+
+	@ConfigItem(
+		keyName = "gridTheme",
+		name = "Grid theme",
+		description = "The theme of the grid."
+	)
+	default SnakeGridTheme gridTheme()
+	{
+		return SnakeGridTheme.ORIGINAL;
+	}
+
 	@ConfigItem(
 		keyName = "enableMultiplayer",
 		name = "Enable multiplayer",

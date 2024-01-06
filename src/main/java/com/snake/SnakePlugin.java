@@ -136,7 +136,7 @@ public class SnakePlugin extends Plugin
 		List<String> playerNames = config.enableMultiplayer() ?
 			Text.fromCSV(config.playerNames()) : Collections.singletonList(client.getLocalPlayer().getName());
 		snakeController.initialize(getGameSize(), playerNames);
-		snakeView.initialize(snakeController.getSnakePlayers(), snakeController.getFoodLocation(), getGameSize());
+		snakeView.initialize(snakeController.getSnakePlayers(), getGameSize(), config.gridTheme());
 	}
 
 	private void resetGame()

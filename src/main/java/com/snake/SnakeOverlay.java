@@ -52,9 +52,9 @@ class SnakeOverlay extends OverlayPanel
 			.build());
 
 		if (currentState == SnakeController.State.WAITING_TO_START ||
+			currentState == SnakeController.State.READY ||
 			currentState == SnakeController.State.PLAYING ||
-			currentState == SnakeController.State.GAME_OVER ||
-			currentState == SnakeController.State.READY)
+			currentState == SnakeController.State.GAME_OVER)
 		{
 			buildScoreOverlay(currentState);
 		}
@@ -76,7 +76,7 @@ class SnakeOverlay extends OverlayPanel
 
 		for (SnakePlayer snakePlayer : snakeController.getSnakePlayers())
 		{
-			String rightText = String.valueOf(snakePlayer.getScore());
+			String rightText = (currentState == SnakeController.State.GAME_OVER ? "Win: " : "") + snakePlayer.getScore();
 			if (currentState == SnakeController.State.WAITING_TO_START)
 			{
 				rightText = snakePlayer.isReady() ? "R" : "-";

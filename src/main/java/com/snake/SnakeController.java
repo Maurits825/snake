@@ -3,6 +3,7 @@ package com.snake;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import javax.inject.Inject;
@@ -49,6 +50,7 @@ public class SnakeController
 	private int readyCount;
 	@Getter
 	private int readyTickCountdown;
+	private int deadCount;
 
 	private Random generator;
 
@@ -69,7 +71,8 @@ public class SnakeController
 		String currentPlayer = client.getLocalPlayer().getName();
 
 		int colorIndex = 0;
-		for (String playerName : playerNames)
+		HashSet<String> uniquePlayerNames = new HashSet<>(playerNames);
+		for (String playerName : uniquePlayerNames)
 		{
 			Player player = SnakeUtils.findPlayer(players, playerName);
 			if (player != null)
@@ -99,6 +102,7 @@ public class SnakeController
 		snakePlayers = new ArrayList<>();
 		readyCount = 0;
 		readyTickCountdown = 0;
+		deadCount = 0;
 		foodLocation = null;
 		this.currentState = State.IDLE;
 	}
@@ -175,8 +179,18 @@ public class SnakeController
 		{
 			if (snakePlayer.isAlive())
 			{
-				snakePlayer.setAlive(checkValidMovement(snakePlayer));
+				boolean isAlive = checkValidMovement(snakePlayer);
+				if (!isAlive)
+				{
+					snakePlayer.setAlive(false);
+					deadCount++;
+				}
 			}
+		}
+		if (deadCount >= snakePlayers.size() - 1)
+		{
+			currentState = State.GAME_OVER;
+			return;
 		}
 
 		updatePlayersOnFood();
