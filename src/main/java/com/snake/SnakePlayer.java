@@ -13,6 +13,8 @@ public class SnakePlayer
 {
 	private static final int INITIAL_TRAIL_SIZE = 2;
 
+	@Getter
+	private WorldPoint currentLocation;
 	private WorldPoint previousLocation;
 
 	@Getter
@@ -21,7 +23,6 @@ public class SnakePlayer
 	@Setter
 	private boolean isReady;
 
-	@Getter
 	private final Player player;
 	@Getter
 	private final String playerName;
@@ -31,7 +32,7 @@ public class SnakePlayer
 	private final boolean isActivePlayer;
 
 	@Getter
-	private Queue<WorldPoint> snakeTrail = new ArrayDeque<>();
+	private final Queue<WorldPoint> snakeTrail = new ArrayDeque<>();
 
 	public SnakePlayer(Player player, Color color, boolean isActivePlayer)
 	{
@@ -39,12 +40,13 @@ public class SnakePlayer
 		this.color = color;
 		this.isActivePlayer = isActivePlayer;
 
-		previousLocation = player.getWorldLocation();
+		currentLocation = player.getWorldLocation();
+		previousLocation = currentLocation;
 		isAlive = true;
 		playerName = player.getName();
 		isReady = false;
 
-		snakeTrail.add(previousLocation);
+		snakeTrail.add(currentLocation);
 	}
 
 	public int getScore()
@@ -71,15 +73,21 @@ public class SnakePlayer
 		}
 	}
 
+	public void updateLocation()
+	{
+		previousLocation = currentLocation;
+		currentLocation = player.getWorldLocation();
+	}
+
 	public void growSnakeTrail()
 	{
-		snakeTrail.add(player.getWorldLocation());
+		snakeTrail.add(currentLocation);
 	}
 
 	public void moveSnakeTrail()
 	{
 		snakeTrail.poll();
-		snakeTrail.add(player.getWorldLocation());
+		snakeTrail.add(currentLocation);
 	}
 
 	public void setAlive(boolean isAlive)
@@ -95,6 +103,6 @@ public class SnakePlayer
 
 	public boolean isRunning()
 	{
-		return previousLocation.distanceTo(player.getWorldLocation()) > 1;
+		return previousLocation.distanceTo(currentLocation) > 1;
 	}
 }

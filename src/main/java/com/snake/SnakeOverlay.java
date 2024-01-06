@@ -4,36 +4,24 @@ import static com.snake.SnakeController.READY_MESSAGE;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
 import javax.inject.Inject;
-import net.runelite.api.Client;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
-import net.runelite.api.Perspective;
-import net.runelite.api.Point;
-import net.runelite.api.SpriteID;
-import net.runelite.client.game.SpriteManager;
 import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import net.runelite.client.ui.overlay.OverlayUtil;
 import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
 
 class SnakeOverlay extends OverlayPanel
 {
 
-	private final Client client;
 	private final SnakeController snakeController;
 
 	@Inject
-	SpriteManager spriteManager;
-
-	@Inject
-	SnakeOverlay(SnakePlugin plugin, Client client, SnakeController snakeController)
+	SnakeOverlay(SnakePlugin plugin, SnakeController snakeController)
 	{
 		super(plugin);
-		this.client = client;
 		this.snakeController = snakeController;
 
 		setPosition(OverlayPosition.TOP_LEFT);
@@ -127,18 +115,5 @@ class SnakeOverlay extends OverlayPanel
 			default:
 				return "-";
 		}
-	}
-
-	private void renderHitsplat(Graphics2D graphics)
-	{
-		BufferedImage image = spriteManager.getSprite(SpriteID.HITSPLAT_GREEN_POISON, 0);
-		Point playerLocation = Perspective.getCanvasImageLocation(
-			client, client.getLocalPlayer().getLocalLocation(), image, 98);
-
-		Point imageLocation = new Point(playerLocation.getX() - 5, playerLocation.getY() - 22);
-		OverlayUtil.renderImageLocation(graphics, imageLocation, image);
-
-		Point textLocation = new Point(playerLocation.getX() - 3, playerLocation.getY() - 3);
-		OverlayUtil.renderTextLocation(graphics, textLocation, "99", Color.WHITE);
 	}
 }

@@ -30,8 +30,8 @@ public class SnakeView
 
 	private WorldPoint wallStartPoint;
 
-	private final int trailModelId = 29311;
-	private int foodModelId = 2317;
+	private static final int TRAIL_MODEL_ID = 29311;
+	private static final int FOOD_MODEL_ID = 2317;
 
 	@Inject
 	public SnakeView(Client client)
@@ -216,7 +216,7 @@ public class SnakeView
 	private RuneLiteObject spawnSnakeTrailObject(Color color)
 	{
 		RuneLiteObject obj = client.createRuneLiteObject();
-		ModelData trailModel = client.loadModelData(trailModelId).cloneColors();
+		ModelData trailModel = client.loadModelData(TRAIL_MODEL_ID).cloneColors();
 
 		trailModel.recolor(trailModel.getFaceColors()[0],
 			JagexColor.rgbToHSL(color.getRGB(), 0.01d));
@@ -257,7 +257,7 @@ public class SnakeView
 	{
 		RuneLiteObject obj = client.createRuneLiteObject();
 
-		ModelData foodModel = client.loadModelData(foodModelId)
+		ModelData foodModel = client.loadModelData(FOOD_MODEL_ID)
 			.cloneVertices()
 			.translate(0, 200, 0)
 			.cloneColors();

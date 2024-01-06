@@ -47,7 +47,6 @@ public class SnakeController
 	private WorldPoint wallStartPoint;
 	private int gameSize;
 	private boolean allowRun;
-	private boolean isMultiplayer;
 
 	private int readyCount;
 	@Getter
@@ -68,7 +67,6 @@ public class SnakeController
 		this.wallStartPoint = SnakeUtils.getWallStartPoint(client.getLocalPlayer().getWorldLocation(), gameSize);
 		this.gameSize = gameSize;
 		this.allowRun = allowRun;
-		this.isMultiplayer = isMultiplayer;
 
 		reset();
 
@@ -190,18 +188,8 @@ public class SnakeController
 
 	private State playing()
 	{
-		for (SnakePlayer snakePlayer : snakePlayers)
-		{
-			if (snakePlayer.isAlive())
-			{
-				boolean isAlive = checkValidMovement(snakePlayer);
-				if (!isAlive)
-				{
-					snakePlayer.setAlive(false);
-					deadCount++;
-				}
-			}
-		}
+		updateAllPlayers();
+
 		if (deadCount >= gameOverDeadCount)
 		{
 			return State.GAME_OVER;
@@ -213,12 +201,29 @@ public class SnakeController
 		return currentState;
 	}
 
+	private void updateAllPlayers()
+	{
+		for (SnakePlayer snakePlayer : snakePlayers)
+		{
+			if (snakePlayer.isAlive())
+			{
+				snakePlayer.updateLocation();
+				boolean isAlive = checkValidMovement(snakePlayer);
+				if (!isAlive)
+				{
+					snakePlayer.setAlive(false);
+					deadCount++;
+				}
+			}
+		}
+	}
+
 	private void updatePlayersOnFood()
 	{
 		List<SnakePlayer> onFoodPlayers = new ArrayList<>();
 		for (SnakePlayer snakePlayer : snakePlayers)
 		{
-			if (snakePlayer.isAlive() && snakePlayer.getPlayer().getWorldLocation().equals(foodLocation))
+			if (snakePlayer.isAlive() && snakePlayer.getCurrentLocation().equals(foodLocation))
 			{
 				onFoodPlayers.add(snakePlayer);
 			}
@@ -248,9 +253,7 @@ public class SnakeController
 
 	private boolean checkValidMovement(SnakePlayer snakePlayer)
 	{
-		Player player = snakePlayer.getPlayer();
-
-		WorldPoint playerWorldPosition = player.getWorldLocation();
+		WorldPoint playerWorldPosition = snakePlayer.getCurrentLocation();
 		boolean inGameBoundary =
 			playerWorldPosition.getX() > wallStartPoint.getX() &&
 				playerWorldPosition.getX() <= (wallStartPoint.getX() + gameSize) &&
@@ -272,7 +275,7 @@ public class SnakeController
 
 	private boolean checkCollision(SnakePlayer sPlayer)
 	{
-		WorldPoint playerLocation = sPlayer.getPlayer().getWorldLocation();
+		WorldPoint playerLocation = sPlayer.getCurrentLocation();
 		for (SnakePlayer snakePlayer : snakePlayers)
 		{
 			for (WorldPoint trailPoint : snakePlayer.getSnakeTrail())
