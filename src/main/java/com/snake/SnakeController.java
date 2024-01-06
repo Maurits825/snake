@@ -53,6 +53,7 @@ public class SnakeController
 	@Getter
 	private int readyTickCountdown;
 	private int deadCount;
+	private int gameOverDeadCount;
 
 	private Random generator;
 
@@ -68,6 +69,7 @@ public class SnakeController
 		this.gameSize = gameSize;
 		this.allowRun = allowRun;
 		this.isMultiplayer = isMultiplayer;
+
 		reset();
 
 		List<Player> players = client.getPlayers();
@@ -91,6 +93,8 @@ public class SnakeController
 			}
 		}
 
+		gameOverDeadCount = snakePlayers.size() - (isMultiplayer && snakePlayers.size() != 1 ? 1 : 0);
+		
 		if (!isMultiplayer)
 		{
 			snakePlayers.get(0).setReady(true);
@@ -198,7 +202,7 @@ public class SnakeController
 				}
 			}
 		}
-		if (deadCount >= snakePlayers.size() - (isMultiplayer ? 1 : 0))
+		if (deadCount >= gameOverDeadCount)
 		{
 			return State.GAME_OVER;
 		}
@@ -263,7 +267,7 @@ public class SnakeController
 			return false;
 		}
 
-		return true;//!checkCollision(snakePlayer); //TODO uncomment!!
+		return !checkCollision(snakePlayer);
 	}
 
 	private boolean checkCollision(SnakePlayer sPlayer)

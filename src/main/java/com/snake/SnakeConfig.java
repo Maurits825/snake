@@ -48,7 +48,7 @@ public interface SnakeConfig extends Config
 	@ConfigSection(
 		name = "Multiplayer options",
 		description = "Refer to the readme via support link for more info.",
-		position = 1,
+		position = 3,
 		closedByDefault = true
 	)
 	String multiplayerOptionsSection = "multiplayerOptionsSection";

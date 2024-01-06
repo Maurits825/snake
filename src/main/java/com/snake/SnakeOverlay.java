@@ -83,7 +83,7 @@ class SnakeOverlay extends OverlayPanel
 			}
 			else if (!snakePlayer.isAlive())
 			{
-				rightText = "Dead!";
+				rightText = "Dead: " + snakePlayer.getScore();
 			}
 
 			panelComponent.getChildren().add(LineComponent.builder()
