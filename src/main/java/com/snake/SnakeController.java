@@ -92,7 +92,7 @@ public class SnakeController
 		}
 
 		gameOverDeadCount = snakePlayers.size() - (isMultiplayer && snakePlayers.size() != 1 ? 1 : 0);
-		
+
 		if (!isMultiplayer)
 		{
 			snakePlayers.get(0).setReady(true);
@@ -233,7 +233,7 @@ public class SnakeController
 		{
 			int randomIndex = generator.nextInt(onFoodPlayers.size());
 			SnakePlayer snakePlayerGrow = onFoodPlayers.get(randomIndex);
-			snakePlayerGrow.growSnakeTrail();
+			snakePlayerGrow.setShouldGrow(true);
 			snakePlayerGrow.setOverHeadText("+1");
 
 			respawnFood();

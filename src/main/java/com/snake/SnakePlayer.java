@@ -31,6 +31,9 @@ public class SnakePlayer
 	@Getter
 	private final boolean isActivePlayer;
 
+	@Setter
+	private boolean shouldGrow;
+
 	@Getter
 	private final Queue<WorldPoint> snakeTrail = new ArrayDeque<>();
 
@@ -45,6 +48,8 @@ public class SnakePlayer
 		isAlive = true;
 		playerName = player.getName();
 		isReady = false;
+
+		shouldGrow = false;
 
 		snakeTrail.add(currentLocation);
 	}
@@ -79,15 +84,18 @@ public class SnakePlayer
 		currentLocation = player.getWorldLocation();
 	}
 
-	public void growSnakeTrail()
-	{
-		snakeTrail.add(currentLocation);
-	}
-
 	public void moveSnakeTrail()
 	{
-		snakeTrail.poll();
-		snakeTrail.add(currentLocation);
+		if (shouldGrow)
+		{
+			snakeTrail.add(currentLocation);
+			shouldGrow = false;
+		}
+		else
+		{
+			snakeTrail.poll();
+			snakeTrail.add(currentLocation);
+		}
 	}
 
 	public void setAlive(boolean isAlive)
