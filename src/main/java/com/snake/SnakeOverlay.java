@@ -29,8 +29,6 @@ class SnakeOverlay extends OverlayPanel
 	@Inject
 	SpriteManager spriteManager;
 
-	private long hitsplatStart;
-
 	@Inject
 	SnakeOverlay(SnakePlugin plugin, Client client, SnakeController snakeController)
 	{
@@ -50,7 +48,7 @@ class SnakeOverlay extends OverlayPanel
 		String status = getStatusText(currentState);
 
 		panelComponent.getChildren().add(TitleComponent.builder()
-			.text("Snake: " + status)
+			.text("Snake - " + status)
 			.build());
 
 		if (currentState == SnakeController.State.WAITING_TO_START ||

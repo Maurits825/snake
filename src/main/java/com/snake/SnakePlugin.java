@@ -135,7 +135,7 @@ public class SnakePlugin extends Plugin
 
 		List<String> playerNames = config.enableMultiplayer() ?
 			Text.fromCSV(config.playerNames()) : Collections.singletonList(client.getLocalPlayer().getName());
-		snakeController.initialize(getGameSize(), playerNames);
+		snakeController.initialize(playerNames, getGameSize(), config.allowRun(), config.enableMultiplayer());
 		snakeView.initialize(snakeController.getSnakePlayers(), getGameSize(), config.gridTheme());
 	}
 
@@ -145,13 +145,6 @@ public class SnakePlugin extends Plugin
 		snakeView.reset();
 	}
 
-
-//
-//	private boolean checkPlayerRunning()
-//	{
-//		return previousPlayerWorldPosition != null && playerLocalPosition != null &&
-//			previousPlayerWorldPosition.distanceTo(playerWorldPosition) > 1;
-//	}
 
 	private int getGameSize()
 	{
@@ -173,7 +166,7 @@ public class SnakePlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged configChanged)
 	{
-		if (configChanged.getGroup().equals("snakeConfig"))
+		if (configChanged.getGroup().equals(SnakeConfig.GROUP))
 		{
 			clientThread.invokeLater(() ->
 			{

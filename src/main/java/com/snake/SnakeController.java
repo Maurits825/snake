@@ -3,9 +3,9 @@ package com.snake;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.TreeSet;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.Getter;
@@ -46,6 +46,8 @@ public class SnakeController
 
 	private WorldPoint wallStartPoint;
 	private int gameSize;
+	private boolean allowRun;
+	private boolean isMultiplayer;
 
 	private int readyCount;
 	@Getter
@@ -60,32 +62,36 @@ public class SnakeController
 		this.client = client;
 	}
 
-	public void initialize(int gameSize, List<String> playerNames)
+	public void initialize(List<String> playerNames, int gameSize, boolean allowRun, boolean isMultiplayer)
 	{
 		this.wallStartPoint = SnakeUtils.getWallStartPoint(client.getLocalPlayer().getWorldLocation(), gameSize);
 		this.gameSize = gameSize;
-
+		this.allowRun = allowRun;
+		this.isMultiplayer = isMultiplayer;
 		reset();
 
 		List<Player> players = client.getPlayers();
 		String currentPlayer = client.getLocalPlayer().getName();
 
 		int colorIndex = 0;
-		HashSet<String> uniquePlayerNames = new HashSet<>(playerNames);
+		TreeSet<String> uniquePlayerNames = new TreeSet<>(playerNames);
 		for (String playerName : uniquePlayerNames)
 		{
 			Player player = SnakeUtils.findPlayer(players, playerName);
 			if (player != null)
 			{
 				boolean isActivePlayer = playerName.equals(currentPlayer);
-				Color color = isActivePlayer ? Color.GREEN : PLAYER_COLORS.get(colorIndex);
+				Color color = PLAYER_COLORS.get(colorIndex);
+				if (isActivePlayer)
+				{
+					color = Color.GREEN;
+				}
 				snakePlayers.add(new SnakePlayer(player, color, isActivePlayer));
+				colorIndex = (colorIndex + 1) % PLAYER_COLORS.size();
 			}
-
-			colorIndex = (colorIndex + 1) % PLAYER_COLORS.size();
 		}
 
-		if (snakePlayers.size() == 1)
+		if (!isMultiplayer)
 		{
 			snakePlayers.get(0).setReady(true);
 			readyTickCountdown = READY_COUNTDOWN_TICKS;
@@ -109,21 +115,23 @@ public class SnakeController
 
 	public void tick()
 	{
+		State nextState = currentState;
 		switch (currentState)
 		{
 			case WAITING_TO_START:
-				waiting();
+				nextState = waiting();
 				break;
 			case READY:
-				ready();
+				nextState = ready();
 				break;
 			case PLAYING:
-				playing();
+				nextState = playing();
 				break;
 			case IDLE:
 			case GAME_OVER:
 				break;
 		}
+		currentState = nextState;
 	}
 
 	public void handleChatMessage(String playerName, String message)
@@ -141,18 +149,19 @@ public class SnakeController
 		}
 	}
 
-	private void waiting()
+	private State waiting()
 	{
 		updateAllSnakeTrails();
 
 		if (readyCount == snakePlayers.size())
 		{
 			readyTickCountdown = READY_COUNTDOWN_TICKS;
-			currentState = State.READY;
+			return State.READY;
 		}
+		return currentState;
 	}
 
-	private void ready()
+	private State ready()
 	{
 		updateAllSnakeTrails();
 
@@ -166,13 +175,16 @@ public class SnakeController
 			}
 			setAllOverheadText("Go!");
 
-			generator = new Random(System.currentTimeMillis());
+			long seed = System.currentTimeMillis() / 5000;
+			generator = new Random(seed);
+			log.debug("Seed: " + seed);
 			respawnFood();
-			currentState = State.PLAYING;
+			return State.PLAYING;
 		}
+		return currentState;
 	}
 
-	private void playing()
+	private State playing()
 	{
 		for (SnakePlayer snakePlayer : snakePlayers)
 		{
@@ -186,14 +198,15 @@ public class SnakeController
 				}
 			}
 		}
-		if (deadCount >= snakePlayers.size() - 1)
+		if (deadCount >= snakePlayers.size() - (isMultiplayer ? 1 : 0))
 		{
-			currentState = State.GAME_OVER;
-			return;
+			return State.GAME_OVER;
 		}
 
 		updatePlayersOnFood();
 		updateAllSnakeTrails();
+
+		return currentState;
 	}
 
 	private void updatePlayersOnFood()
@@ -232,10 +245,6 @@ public class SnakeController
 	private boolean checkValidMovement(SnakePlayer snakePlayer)
 	{
 		Player player = snakePlayer.getPlayer();
-		if (player == null || player.getName() == null)
-		{
-			return false;
-		}
 
 		WorldPoint playerWorldPosition = player.getWorldLocation();
 		boolean inGameBoundary =
@@ -249,9 +258,28 @@ public class SnakeController
 			return false;
 		}
 
-		//TODO check trail collision
+		if (!allowRun && snakePlayer.isRunning())
+		{
+			return false;
+		}
 
-		return true;
+		return true;//!checkCollision(snakePlayer); //TODO uncomment!!
+	}
+
+	private boolean checkCollision(SnakePlayer sPlayer)
+	{
+		WorldPoint playerLocation = sPlayer.getPlayer().getWorldLocation();
+		for (SnakePlayer snakePlayer : snakePlayers)
+		{
+			for (WorldPoint trailPoint : snakePlayer.getSnakeTrail())
+			{
+				if (trailPoint.equals(playerLocation))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	private void setAllOverheadText(String text)

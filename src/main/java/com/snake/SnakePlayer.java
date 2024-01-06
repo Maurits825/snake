@@ -16,7 +16,6 @@ public class SnakePlayer
 	private WorldPoint previousLocation;
 
 	@Getter
-	@Setter
 	private boolean isAlive;
 	@Getter
 	@Setter
@@ -81,5 +80,21 @@ public class SnakePlayer
 	{
 		snakeTrail.poll();
 		snakeTrail.add(player.getWorldLocation());
+	}
+
+	public void setAlive(boolean isAlive)
+	{
+		this.isAlive = isAlive;
+		if (!isAlive)
+		{
+			setOverHeadText("Game Over!");
+			player.setAnimation(2925);
+			player.setAnimationFrame(0);
+		}
+	}
+
+	public boolean isRunning()
+	{
+		return previousLocation.distanceTo(player.getWorldLocation()) > 1;
 	}
 }
