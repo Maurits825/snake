@@ -145,9 +145,13 @@ public class SnakeView
 		{
 			for (int i = 0; i < snakePlayers.size(); i++)
 			{
-				if (showAllFood || snakePlayers.get(i).isActivePlayer())
+				if (showAllFood)
 				{
 					drawFoodAtLocation(foods.get(i), snakePlayers.get(i).getFoodLocation());
+				}
+				else if (snakePlayers.get(i).isActivePlayer())
+				{
+					drawFoodAtLocation(foods.get(0), snakePlayers.get(i).getFoodLocation());
 				}
 			}
 		}

@@ -67,7 +67,7 @@ public interface SnakeConfig extends Config
 	@ConfigItem(
 		keyName = "isSameFoodSpawn",
 		name = "Same food spawn",
-		description = "If enabled all players have the same food spawn, otherwise it is per player.",
+		description = "If enabled all players have the same food spawn location, otherwise it is per player.",
 		position = 1,
 		section = multiplayerOptionsSection
 	)
