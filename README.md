@@ -30,7 +30,7 @@ Shift right-click the overlay and select "Start new game". A countdown will appe
 | Allow run | Allow running
 | Grid theme | The theme of the grid
 | Enable multiplayer | Enable multiplayer mode
-| Seed | The seed used to randomize spawn locations
+| Seed | The seed used to randomize spawn locations (affects only multiplayer)
 | Same food spawn | If enabled all players have the same food spawn location, otherwise it is per player
 | Show all food | Show all food spawns if same food spawn is enabled
 | Player names | RSN of all the players participating, as comma separated list
