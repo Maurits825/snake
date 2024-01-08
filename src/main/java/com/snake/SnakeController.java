@@ -65,12 +65,13 @@ public class SnakeController
 		this.client = client;
 	}
 
-	public void initialize(List<String> playerNames, int gameSize, boolean allowRun, boolean isMultiplayer, boolean isSameFoodSpawn)
+	public void initialize(List<String> playerNames, int gameSize, boolean allowRun, boolean isMultiplayer, boolean isSameFoodSpawn, int seed)
 	{
 		this.wallStartPoint = SnakeUtils.getWallStartPoint(client.getLocalPlayer().getWorldLocation(), gameSize);
 		this.gameSize = gameSize;
 		this.allowRun = allowRun;
 		this.isSameFoodSpawn = isSameFoodSpawn;
+		generator = new Random(isMultiplayer ? seed : System.nanoTime());
 
 		reset();
 
@@ -181,10 +182,6 @@ public class SnakeController
 			}
 			setAllOverheadText("Go!");
 
-			//TODO do some stat maths
-			long seed = System.currentTimeMillis() / 5000;
-			generator = new Random(seed);
-			log.debug("Snake seed: " + seed);
 			respawnAllFood();
 			return State.PLAYING;
 		}
