@@ -18,19 +18,18 @@ Shift right-click the overlay and select "Start new game". A countdown will appe
    - Enable multiplayer
    - Same food spawn
    - Player names (order does not matter)
-2. All players should stand on the same tile and start the game by shift right-click the overlay and select "Start new game"
+2. All players should stand on the same tile and start the game by shift right-click the overlay and select "Start new game".
 3. All player should type "r" in public chat to ready.
 4. A countdown will appear and then the game will start.
 
 ## Config
-You can change the game size in the configuration settings.
 | Config | Description |
 | --- | --- |
-| Game size | - 
-| Allow run | -  
-| Grid theme | -  
-| Enable multiplayer | -
-| Same food spawn | -
-| Show all food | -
-| Player names | -
-| Show add player menu | -
+| Game size | The size of the game
+| Allow run | Allow running
+| Grid theme | The theme of the grid
+| Enable multiplayer | Enable multiplayer mode
+| Same food spawn | If enabled all players have the same food spawn, otherwise it is per player
+| Show all food | Show all food spawns if same food spawn is enabled
+| Player names | RSN of all the players participating, as comma separated list
+| Show add player menu | Show add player menu on players
