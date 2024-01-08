@@ -21,6 +21,7 @@ public class SnakeView
 
 	private List<SnakePlayer> snakePlayers;
 	private int gameSize;
+	boolean[][] walkableTiles;
 	private SnakeGridTheme theme;
 
 	private final Map<SnakePlayer, List<RuneLiteObject>> snakePlayerTrails = new HashMap<>();
@@ -39,11 +40,12 @@ public class SnakeView
 		this.client = client;
 	}
 
-	public void initialize(List<SnakePlayer> snakePlayers, int gameSize, SnakeGridTheme theme)
+	public void initialize(List<SnakePlayer> snakePlayers, int gameSize, SnakeGridTheme theme, boolean[][] walkableTiles)
 	{
 		this.snakePlayers = snakePlayers;
 		this.gameSize = gameSize;
 		this.theme = theme;
+		this.walkableTiles = walkableTiles;
 
 		wallStartPoint = SnakeUtils.getWallStartPoint(client.getLocalPlayer().getWorldLocation(), gameSize);
 
@@ -165,7 +167,11 @@ public class SnakeView
 				{
 					tileObjectId = theme.getTileModelId2();
 				}
-				tiles.add(spawnGridTileObject(wallStartPoint.dx(x + 1).dy(-(y + 1)), tileObjectId));
+
+				if (walkableTiles[x][y])
+				{
+					tiles.add(spawnGridTileObject(wallStartPoint.dx(x + 1).dy(-(y + 1)), tileObjectId));
+				}
 			}
 		}
 	}
@@ -248,7 +254,7 @@ public class SnakeView
 		obj.setModel(tile);
 		LocalPoint lp = LocalPoint.fromWorld(client, point);
 		obj.setLocation(lp, client.getPlane());
-		
+
 		obj.setActive(true);
 		return obj;
 	}

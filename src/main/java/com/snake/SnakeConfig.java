@@ -17,7 +17,7 @@ public interface SnakeConfig extends Config
 		description = "The size of the game.",
 		position = 0
 	)
-	@Range(min = 1)
+	@Range(min = 1, max = 30)
 	default int gameSize()
 	{
 		return 2;

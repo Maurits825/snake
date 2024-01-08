@@ -12,6 +12,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 
 @Slf4j
@@ -33,6 +34,7 @@ public class SnakeController
 		Color.BLUE, Color.YELLOW, Color.MAGENTA, Color.CYAN, Color.RED
 	);
 	private static final int READY_COUNTDOWN_TICKS = 5;
+	private static final int MAX_RANDOM_POINT_TRIES = 100;
 
 	private final Client client;
 
@@ -43,6 +45,8 @@ public class SnakeController
 	private List<SnakePlayer> snakePlayers;
 	@Getter
 	private WorldPoint foodLocation;
+	@Getter
+	private boolean[][] walkableTiles;
 
 	private WorldPoint wallStartPoint;
 	private int gameSize;
@@ -72,6 +76,7 @@ public class SnakeController
 
 		List<Player> players = client.getPlayers();
 		String currentPlayer = client.getLocalPlayer().getName();
+		walkableTiles = getWalkableTiles(wallStartPoint.dx(1).dy(-1));
 
 		int colorIndex = 0;
 		TreeSet<String> uniquePlayerNames = new TreeSet<>(playerNames);
@@ -305,13 +310,34 @@ public class SnakeController
 	private WorldPoint getRandomPointInGrid()
 	{
 		WorldPoint randomPoint;
+		int x;
+		int y;
+		int count = 0;
 		do
 		{
-			int x = generator.nextInt(gameSize);
-			int y = generator.nextInt(gameSize);
+			x = generator.nextInt(gameSize);
+			y = generator.nextInt(gameSize);
 			randomPoint = wallStartPoint.dx(x + 1).dy(-(y + 1));
-		} while (randomPoint.equals(foodLocation));
+			count++;
+		} while (count < MAX_RANDOM_POINT_TRIES && (randomPoint.equals(foodLocation) || !walkableTiles[x][y]));
 
 		return randomPoint;
+	}
+
+	private boolean[][] getWalkableTiles(WorldPoint gridStart)
+	{
+		boolean[][] walkable = new boolean[gameSize][gameSize];
+
+		int[][] flags = client.getCollisionMaps()[client.getPlane()].getFlags();
+		LocalPoint gridStartInScene = SnakeUtils.getWorldPointLocationInScene(client, gridStart);
+		for (int x = 0; x < gameSize; ++x)
+		{
+			for (int y = 0; y < gameSize; ++y)
+			{
+				int data = flags[x + gridStartInScene.getX()][gridStartInScene.getY() - y];
+				walkable[x][y] = data == 0;
+			}
+		}
+		return walkable;
 	}
 }
