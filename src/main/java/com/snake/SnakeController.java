@@ -147,7 +147,7 @@ public class SnakeController
 		{
 			for (SnakePlayer snakePlayer : snakePlayers)
 			{
-				if (snakePlayer.getPlayerName().equals(playerName))
+				if (snakePlayer.getPlayerName().equals(playerName) && !snakePlayer.isReady())
 				{
 					snakePlayer.setReady(true);
 					readyCount++;
@@ -158,7 +158,11 @@ public class SnakeController
 
 	private State waiting()
 	{
-		updateAllSnakeTrails();
+		for (SnakePlayer snakePlayer : snakePlayers)
+		{
+			snakePlayer.updateLocation();
+			snakePlayer.moveSnakeTrail();
+		}
 
 		if (readyCount == snakePlayers.size())
 		{
@@ -170,7 +174,11 @@ public class SnakeController
 
 	private State ready()
 	{
-		updateAllSnakeTrails();
+		for (SnakePlayer snakePlayer : snakePlayers)
+		{
+			snakePlayer.updateLocation();
+			snakePlayer.moveSnakeTrail();
+		}
 
 		readyTickCountdown--;
 		setAllOverheadText(String.valueOf(readyTickCountdown));
