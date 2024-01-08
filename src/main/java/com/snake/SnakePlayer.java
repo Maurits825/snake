@@ -36,6 +36,9 @@ public class SnakePlayer
 
 	@Getter
 	private final Queue<WorldPoint> snakeTrail = new ArrayDeque<>();
+	@Getter
+	@Setter
+	private WorldPoint foodLocation;
 
 	public SnakePlayer(Player player, Color color, boolean isActivePlayer)
 	{
@@ -52,6 +55,7 @@ public class SnakePlayer
 		shouldGrow = false;
 
 		snakeTrail.add(currentLocation);
+		foodLocation = null;
 	}
 
 	public int getScore()

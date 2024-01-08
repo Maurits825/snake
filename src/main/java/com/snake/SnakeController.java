@@ -44,13 +44,12 @@ public class SnakeController
 	@Getter
 	private List<SnakePlayer> snakePlayers;
 	@Getter
-	private WorldPoint foodLocation;
-	@Getter
 	private boolean[][] walkableTiles;
 
 	private WorldPoint wallStartPoint;
 	private int gameSize;
 	private boolean allowRun;
+	private boolean isSameFoodSpawn;
 
 	private int readyCount;
 	@Getter
@@ -66,11 +65,12 @@ public class SnakeController
 		this.client = client;
 	}
 
-	public void initialize(List<String> playerNames, int gameSize, boolean allowRun, boolean isMultiplayer)
+	public void initialize(List<String> playerNames, int gameSize, boolean allowRun, boolean isMultiplayer, boolean isSameFoodSpawn)
 	{
 		this.wallStartPoint = SnakeUtils.getWallStartPoint(client.getLocalPlayer().getWorldLocation(), gameSize);
 		this.gameSize = gameSize;
 		this.allowRun = allowRun;
+		this.isSameFoodSpawn = isSameFoodSpawn;
 
 		reset();
 
@@ -116,7 +116,6 @@ public class SnakeController
 		readyCount = 0;
 		readyTickCountdown = 0;
 		deadCount = 0;
-		foodLocation = null;
 		this.currentState = State.IDLE;
 	}
 
@@ -182,10 +181,11 @@ public class SnakeController
 			}
 			setAllOverheadText("Go!");
 
+			//TODO do some stat maths
 			long seed = System.currentTimeMillis() / 5000;
 			generator = new Random(seed);
-			log.debug("Seed: " + seed);
-			respawnFood();
+			log.debug("Snake seed: " + seed);
+			respawnAllFood();
 			return State.PLAYING;
 		}
 		return currentState;
@@ -228,7 +228,7 @@ public class SnakeController
 		List<SnakePlayer> onFoodPlayers = new ArrayList<>();
 		for (SnakePlayer snakePlayer : snakePlayers)
 		{
-			if (snakePlayer.isAlive() && snakePlayer.getCurrentLocation().equals(foodLocation))
+			if (snakePlayer.isAlive() && snakePlayer.getCurrentLocation().equals(snakePlayer.getFoodLocation()))
 			{
 				onFoodPlayers.add(snakePlayer);
 			}
@@ -236,12 +236,23 @@ public class SnakeController
 
 		if (onFoodPlayers.size() >= 1)
 		{
-			int randomIndex = generator.nextInt(onFoodPlayers.size());
-			SnakePlayer snakePlayerGrow = onFoodPlayers.get(randomIndex);
-			snakePlayerGrow.setShouldGrow(true);
-			snakePlayerGrow.setOverHeadText("+1");
-
-			respawnFood();
+			if (isSameFoodSpawn)
+			{
+				int randomIndex = generator.nextInt(onFoodPlayers.size());
+				SnakePlayer snakePlayerGrow = onFoodPlayers.get(randomIndex);
+				snakePlayerGrow.setShouldGrow(true);
+				snakePlayerGrow.setOverHeadText("+1");
+				respawnAllFood();
+			}
+			else
+			{
+				for (SnakePlayer snakePlayerGrow : onFoodPlayers)
+				{
+					snakePlayerGrow.setShouldGrow(true);
+					snakePlayerGrow.setOverHeadText("+1");
+					snakePlayerGrow.setFoodLocation(getRandomPointInGrid());
+				}
+			}
 		}
 	}
 
@@ -302,9 +313,23 @@ public class SnakeController
 		}
 	}
 
-	private void respawnFood()
+	private void respawnAllFood()
 	{
-		foodLocation = getRandomPointInGrid();
+		if (isSameFoodSpawn)
+		{
+			WorldPoint foodLocation = getRandomPointInGrid();
+			for (SnakePlayer snakePlayer : snakePlayers)
+			{
+				snakePlayer.setFoodLocation(foodLocation);
+			}
+		}
+		else
+		{
+			for (SnakePlayer snakePlayer : snakePlayers)
+			{
+				snakePlayer.setFoodLocation(getRandomPointInGrid());
+			}
+		}
 	}
 
 	private WorldPoint getRandomPointInGrid()
@@ -319,9 +344,26 @@ public class SnakeController
 			y = generator.nextInt(gameSize);
 			randomPoint = wallStartPoint.dx(x + 1).dy(-(y + 1));
 			count++;
-		} while (count < MAX_RANDOM_POINT_TRIES && (randomPoint.equals(foodLocation) || !walkableTiles[x][y]));
+		} while (count < MAX_RANDOM_POINT_TRIES && !isFoodSpawnValid(randomPoint, x, y));
 
 		return randomPoint;
+	}
+
+	private boolean isFoodSpawnValid(WorldPoint point, int x, int y)
+	{
+		if (!walkableTiles[x][y])
+		{
+			return false;
+		}
+
+		for (SnakePlayer snakePlayer : snakePlayers)
+		{
+			if (point.equals(snakePlayer.getFoodLocation()))
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private boolean[][] getWalkableTiles(WorldPoint gridStart)

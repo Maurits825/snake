@@ -2,6 +2,7 @@ package com.snake;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,18 +22,22 @@ public class SnakeView
 
 	private List<SnakePlayer> snakePlayers;
 	private int gameSize;
-	boolean[][] walkableTiles;
+	private boolean[][] walkableTiles;
 	private SnakeGridTheme theme;
+	private boolean isSameFoodSpawn;
+	private boolean showAllFood;
 
 	private final Map<SnakePlayer, List<RuneLiteObject>> snakePlayerTrails = new HashMap<>();
 	private final List<RuneLiteObject> walls = new ArrayList<>();
 	private final List<RuneLiteObject> tiles = new ArrayList<>();
-	private RuneLiteObject foodObject;
+	private final List<RuneLiteObject> foods = new ArrayList<>();
 
 	private WorldPoint wallStartPoint;
 
 	private static final int TRAIL_MODEL_ID = 29311;
 	private static final int FOOD_MODEL_ID = 2317;
+
+	private static final Color DEFAULT_FOOD_COLOR = new Color(186, 16, 225);
 
 	@Inject
 	public SnakeView(Client client)
@@ -40,12 +45,14 @@ public class SnakeView
 		this.client = client;
 	}
 
-	public void initialize(List<SnakePlayer> snakePlayers, int gameSize, SnakeGridTheme theme, boolean[][] walkableTiles)
+	public void initialize(List<SnakePlayer> snakePlayers, int gameSize, SnakeGridTheme theme, boolean[][] walkableTiles, boolean isSameFoodSpawn, boolean showAllFood)
 	{
 		this.snakePlayers = snakePlayers;
 		this.gameSize = gameSize;
 		this.theme = theme;
 		this.walkableTiles = walkableTiles;
+		this.isSameFoodSpawn = isSameFoodSpawn;
+		this.showAllFood = showAllFood;
 
 		wallStartPoint = SnakeUtils.getWallStartPoint(client.getLocalPlayer().getWorldLocation(), gameSize);
 
@@ -58,25 +65,19 @@ public class SnakeView
 			spawnGridTiles();
 		}
 
-		foodObject = spawnFoodObject();
+		spawnFoods();
 	}
 
-	public void update(WorldPoint foodLocation)
+	public void update()
 	{
-		updateFoodObject(foodLocation);
+		updateFoodObjects();
 		updateSnakeTrails();
 	}
 
 	public void reset()
 	{
-		clearWalls();
-		clearGridTiles();
+		clearAll(Arrays.asList(tiles, walls, foods));
 		clearSnakeTrails();
-
-		if (foodObject != null)
-		{
-			foodObject.setActive(false);
-		}
 
 		snakePlayers = null;
 	}
@@ -129,6 +130,43 @@ public class SnakeView
 		}
 	}
 
+	private void updateFoodObjects()
+	{
+		if (snakePlayers == null)
+		{
+			return;
+		}
+
+		if (isSameFoodSpawn)
+		{
+			drawFoodAtLocation(foods.get(0), snakePlayers.get(0).getFoodLocation());
+		}
+		else
+		{
+			for (int i = 0; i < snakePlayers.size(); i++)
+			{
+				if (showAllFood || snakePlayers.get(i).isActivePlayer())
+				{
+					drawFoodAtLocation(foods.get(i), snakePlayers.get(i).getFoodLocation());
+				}
+			}
+		}
+	}
+
+	private void drawFoodAtLocation(RuneLiteObject food, WorldPoint location)
+	{
+		if (location == null)
+		{
+			return;
+		}
+
+		food.setLocation(LocalPoint.fromWorld(client, location), client.getPlane());
+		if (!food.isActive())
+		{
+			food.setActive(true);
+		}
+	}
+
 	private void spawnWalls()
 	{
 		for (int x = 0; x < gameSize + 2; x++)
@@ -176,36 +214,31 @@ public class SnakeView
 		}
 	}
 
-	private void updateFoodObject(WorldPoint foodLocation)
+	private void spawnFoods()
 	{
-		if (foodLocation == null)
+		if (isSameFoodSpawn || snakePlayers.size() == 1)
 		{
-			return;
+			foods.add(spawnFoodObject(DEFAULT_FOOD_COLOR));
 		}
-
-		if (!foodObject.isActive())
+		else
 		{
-			foodObject.setActive(true);
+			for (SnakePlayer snakePlayer : snakePlayers)
+			{
+				foods.add(spawnFoodObject(snakePlayer.getColor()));
+			}
 		}
-		foodObject.setLocation(LocalPoint.fromWorld(client, foodLocation), client.getPlane());
 	}
 
-	private void clearWalls()
+	private void clearAll(List<List<RuneLiteObject>> allObjectLists)
 	{
-		for (RuneLiteObject obj : walls)
+		for (List<RuneLiteObject> objectList : allObjectLists)
 		{
-			obj.setActive(false);
+			for (RuneLiteObject obj : objectList)
+			{
+				obj.setActive(false);
+			}
+			objectList.clear();
 		}
-		walls.clear();
-	}
-
-	private void clearGridTiles()
-	{
-		for (RuneLiteObject obj : tiles)
-		{
-			obj.setActive(false);
-		}
-		tiles.clear();
 	}
 
 	private void clearSnakeTrails()
@@ -259,7 +292,7 @@ public class SnakeView
 		return obj;
 	}
 
-	private RuneLiteObject spawnFoodObject()
+	private RuneLiteObject spawnFoodObject(Color color)
 	{
 		RuneLiteObject obj = client.createRuneLiteObject();
 
@@ -268,7 +301,7 @@ public class SnakeView
 			.translate(0, 200, 0)
 			.cloneColors();
 		foodModel.recolor(foodModel.getFaceColors()[0],
-			JagexColor.rgbToHSL(new Color(186, 16, 225).getRGB(), 1.0d));
+			JagexColor.rgbToHSL(color.getRGB(), 1.0d));
 		obj.setModel(foodModel.light());
 
 		obj.setAnimation(client.loadAnimation(502));

@@ -95,7 +95,7 @@ public class SnakePlugin extends Plugin
 	public void onGameTick(GameTick tick)
 	{
 		snakeController.tick();
-		snakeView.update(snakeController.getFoodLocation());
+		snakeView.update();
 	}
 
 	@Subscribe
@@ -135,8 +135,8 @@ public class SnakePlugin extends Plugin
 
 		List<String> playerNames = config.enableMultiplayer() ?
 			Text.fromCSV(config.playerNames()) : Collections.singletonList(client.getLocalPlayer().getName());
-		snakeController.initialize(playerNames, getGameSize(), config.allowRun(), config.enableMultiplayer());
-		snakeView.initialize(snakeController.getSnakePlayers(), getGameSize(), config.gridTheme(), snakeController.getWalkableTiles());
+		snakeController.initialize(playerNames, getGameSize(), config.allowRun(), config.enableMultiplayer(), config.isSameFoodSpawn());
+		snakeView.initialize(snakeController.getSnakePlayers(), getGameSize(), config.gridTheme(), snakeController.getWalkableTiles(), config.isSameFoodSpawn(), config.showAllFood());
 	}
 
 	private void resetGame()

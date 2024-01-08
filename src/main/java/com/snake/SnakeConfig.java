@@ -65,10 +65,34 @@ public interface SnakeConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "isSameFoodSpawn",
+		name = "Same food spawn",
+		description = "If enabled all players have the same food spawn, otherwise it is per player.",
+		position = 1,
+		section = multiplayerOptionsSection
+	)
+	default boolean isSameFoodSpawn()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showAllFood",
+		name = "Show all food",
+		description = "Show all food spawns if same food spawn is enabled.",
+		position = 2,
+		section = multiplayerOptionsSection
+	)
+	default boolean showAllFood()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "playerNames",
 		name = "Player names",
-		description = "RSN of the players, as comma separated list.",
-		position = 1,
+		description = "RSN of all the players participating, as comma separated list.",
+		position = 3,
 		section = multiplayerOptionsSection
 	)
 	default String playerNames()
@@ -80,7 +104,7 @@ public interface SnakeConfig extends Config
 		keyName = "addPlayerMenuEntry",
 		name = "Show add player menu",
 		description = "Show add player menu on players.",
-		position = 2,
+		position = 4,
 		section = multiplayerOptionsSection
 	)
 	default boolean addPlayerMenuEntry()
