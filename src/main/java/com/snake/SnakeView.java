@@ -216,7 +216,7 @@ public class SnakeView
 
 	private void spawnFoods()
 	{
-		if (isSameFoodSpawn || snakePlayers.size() == 1)
+		if (isSameFoodSpawn || !showAllFood || snakePlayers.size() == 1)
 		{
 			foods.add(spawnFoodObject(DEFAULT_FOOD_COLOR));
 		}
