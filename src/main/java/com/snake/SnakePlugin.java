@@ -123,7 +123,7 @@ public class SnakePlugin extends Plugin
 	{
 		if (event.getType() == ChatMessageType.PUBLICCHAT)
 		{
-			String playerName = event.getName();
+			String playerName = Text.sanitize(Text.removeTags(event.getName()));
 			String message = Text.sanitize(Text.removeTags(event.getMessage())).toLowerCase();
 			snakeController.handleChatMessage(playerName, message);
 		}
