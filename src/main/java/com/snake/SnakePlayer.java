@@ -110,6 +110,7 @@ public class SnakePlayer
 			setOverHeadText("Game Over!");
 			player.setAnimation(2925);
 			player.setAnimationFrame(0);
+			snakeTrail.clear();
 		}
 	}
 
