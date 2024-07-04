@@ -99,7 +99,6 @@ public class SnakePlayer
 		{
 			snakeTrail.add(currentLocation);
 			shouldGrow = false;
-			increaseScore();
 		}
 		else
 		{
