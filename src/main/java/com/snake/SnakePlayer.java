@@ -40,11 +40,16 @@ public class SnakePlayer
 	@Setter
 	private WorldPoint foodLocation;
 
+	@Getter
+	@Setter
+	private int score;
+
 	public SnakePlayer(Player player, Color color, boolean isActivePlayer)
 	{
 		this.player = player;
 		this.color = color;
 		this.isActivePlayer = isActivePlayer;
+		this.score = INITIAL_TRAIL_SIZE;
 
 		currentLocation = player.getWorldLocation();
 		previousLocation = currentLocation;
@@ -58,12 +63,7 @@ public class SnakePlayer
 		foodLocation = null;
 	}
 
-	public int getScore()
-	{
-		return Math.max(0, snakeTrail.size() - INITIAL_TRAIL_SIZE);
-	}
-
-	public void setOverHeadText(String text)
+    public void setOverHeadText(String text)
 	{
 		setOverHeadText(text, 50);
 	}
@@ -80,6 +80,11 @@ public class SnakePlayer
 		{
 			snakeTrail.add(player.getWorldLocation());
 		}
+	}
+
+	public void increaseScore()
+	{
+		score++;
 	}
 
 	public void updateLocation()
@@ -110,6 +115,7 @@ public class SnakePlayer
 			setOverHeadText("Game Over!");
 			player.setAnimation(2925);
 			player.setAnimationFrame(0);
+			snakeTrail.clear();
 		}
 	}
 

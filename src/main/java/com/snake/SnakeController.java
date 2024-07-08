@@ -246,6 +246,7 @@ public class SnakeController
 				int randomIndex = generator.nextInt(onFoodPlayers.size());
 				SnakePlayer snakePlayerGrow = onFoodPlayers.get(randomIndex);
 				snakePlayerGrow.setShouldGrow(true);
+				snakePlayerGrow.increaseScore();
 				snakePlayerGrow.setOverHeadText("+1");
 				respawnAllFood();
 			}
@@ -255,6 +256,7 @@ public class SnakeController
 				{
 					snakePlayerGrow.setShouldGrow(true);
 					snakePlayerGrow.setOverHeadText("+1");
+					snakePlayerGrow.increaseScore();
 					snakePlayerGrow.setFoodLocation(getRandomPointInGrid());
 				}
 			}
